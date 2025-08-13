@@ -1,83 +1,153 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { FaArrowLeft, FaArrowRight, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaPaw, FaCheck } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
-import { FaArrowLeft, FaArrowRight, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaPaw, FaCreditCard } from "react-icons/fa";
-import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { usePets } from "@/hooks/usePets";
+import { useWalkers } from "@/hooks/useWalkers";
+import { useServiceTypes, useCreateBooking } from "@/hooks/useBookings";
 
 const BookingNew = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [bookingData, setBookingData] = useState({
-    pet: "",
-    date: "",
-    time: "",
-    duration: "",
-    location: "",
-    walker: "",
-    notes: ""
-  });
+  const [selectedPet, setSelectedPet] = useState<string>("");
+  const [selectedService, setSelectedService] = useState<string>("");
+  const [selectedWalker, setSelectedWalker] = useState<string>("");
   
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { toast } = useToast();
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm();
+  
+  const { data: pets = [] } = usePets();
+  const { data: walkers = [] } = useWalkers();
+  const { data: serviceTypes = [] } = useServiceTypes();
+  const createBookingMutation = useCreateBooking();
+
+  // Pre-select pet and walker from URL params
+  useEffect(() => {
+    const petId = searchParams.get('pet');
+    const walkerId = searchParams.get('walker');
+    
+    if (petId && pets.some(p => p.id === petId)) {
+      setSelectedPet(petId);
+      setValue('pet_id', petId);
+    }
+    
+    if (walkerId && walkers.some(w => w.id === walkerId)) {
+      setSelectedWalker(walkerId);
+      setValue('walker_id', walkerId);
+    }
+  }, [pets, walkers, searchParams, setValue]);
 
   const steps = [
     { number: 1, title: "Select Pet", icon: FaPaw, emoji: "🐕" },
-    { number: 2, title: "Date & Time", icon: FaCalendarAlt, emoji: "📅" },
-    { number: 3, title: "Location", icon: FaMapMarkerAlt, emoji: "📍" },
+    { number: 2, title: "Service & Time", icon: FaCalendarAlt, emoji: "📅" },
+    { number: 3, title: "Location & Details", icon: FaMapMarkerAlt, emoji: "📍" },
     { number: 4, title: "Choose Walker", icon: FaPaw, emoji: "👨‍🦱" },
-    { number: 5, title: "Payment", icon: FaCreditCard, emoji: "💳" }
-  ];
-
-  const pets = [
-    { id: 1, name: "Buddy", breed: "Golden Retriever", emoji: "🐕", energy: "High" },
-    { id: 2, name: "Luna", breed: "French Bulldog", emoji: "🐩", energy: "Medium" },
-    { id: 3, name: "Max", breed: "Border Collie", emoji: "🐺", energy: "Very High" }
+    { number: 5, title: "Review & Confirm", icon: FaCheck, emoji: "✅" }
   ];
 
   const timeSlots = [
-    "8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM",
-    "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM",
-    "4:00 PM", "5:00 PM", "6:00 PM", "7:00 PM"
+    "06:00 AM", "07:00 AM", "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM",
+    "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM",
+    "06:00 PM", "07:00 PM", "08:00 PM"
   ];
 
-  const durations = [
-    { value: "30", label: "30 minutes", price: 15 },
-    { value: "60", label: "1 hour", price: 25 },
-    { value: "90", label: "1.5 hours", price: 35 },
-    { value: "120", label: "2 hours", price: 45 }
-  ];
+  const onSubmit = async (data: any) => {
+    try {
+      // Validation checks
+      if (!selectedPet) {
+        toast({
+          title: "Error",
+          description: "Please select a pet",
+          variant: "destructive"
+        });
+        return;
+      }
 
-  const suggestedWalkers = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      avatar: "👩‍🦱",
-      rating: 4.9,
-      price: 25,
-      specialties: ["Energetic Dogs", "Training"],
-      available: true,
-      aiRecommended: true
-    },
-    {
-      id: 2,
-      name: "Emily Rodriguez",
-      avatar: "👩",
-      rating: 4.8,
-      price: 28,
-      specialties: ["Active Dogs", "Adventure"],
-      available: true,
-      aiRecommended: true
-    },
-    {
-      id: 3,
-      name: "Mike Chen",
-      avatar: "👨",
-      rating: 4.7,
-      price: 30,
-      specialties: ["Gentle Care", "Senior Dogs"],
-      available: false,
-      aiRecommended: false
+      if (!selectedService) {
+        toast({
+          title: "Error",
+          description: "Please select a service type",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!data.scheduled_date || !data.scheduled_time) {
+        toast({
+          title: "Error",
+          description: "Please select date and time",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!data.pickup_address) {
+        toast({
+          title: "Error",
+          description: "Please enter pickup address",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const selectedServiceType = serviceTypes.find(s => s.id === selectedService);
+      if (!selectedServiceType) {
+        toast({
+          title: "Error",
+          description: "Invalid service type selected",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Validate date is not in the past
+      const selectedDate = new Date(data.scheduled_date + 'T' + data.scheduled_time);
+      const now = new Date();
+      if (selectedDate <= now) {
+        toast({
+          title: "Error",
+          description: "Cannot schedule a walk in the past",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      await createBookingMutation.mutateAsync({
+        pet_id: selectedPet,
+        walker_id: selectedWalker || null,
+        service_type_id: selectedService,
+        scheduled_date: data.scheduled_date,
+        scheduled_time: data.scheduled_time,
+        duration_minutes: selectedServiceType.duration_minutes,
+        pickup_address: data.pickup_address,
+        base_price: selectedServiceType.base_price,
+        total_amount: selectedServiceType.base_price,
+        special_instructions: data.special_instructions || null,
+        emergency_contact_phone: data.emergency_contact_phone || null,
+      });
+
+      toast({
+        title: "Booking created successfully! 🎉",
+        description: "Your furry friend's adventure is scheduled!"
+      });
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error('Booking error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create booking: " + (error.message || 'Unknown error'),
+        variant: "destructive"
+      });
     }
-  ];
+  };
 
   const nextStep = () => {
     if (currentStep < steps.length) {
@@ -91,337 +161,310 @@ const BookingNew = () => {
     }
   };
 
-  const completeBooking = () => {
-    toast.success("Booking confirmed! 🎉", {
-      description: "Your walker will be in touch soon!"
-    });
-    setTimeout(() => {
-      navigate("/dashboard");
-    }, 2000);
+  const canProceed = () => {
+    switch (currentStep) {
+      case 1: 
+        return selectedPet !== "";
+      case 2: 
+        return selectedService !== "" && 
+               watch('scheduled_date') && 
+               watch('scheduled_time') &&
+               serviceTypes.length > 0;
+      case 3: 
+        const address = watch('pickup_address');
+        return address && address.trim().length > 0;
+      case 4: 
+        // Walker selection is optional - can proceed without selecting one
+        return true;
+      case 5: 
+        return true;
+      default: 
+        return false;
+    }
   };
 
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
         return (
-          <motion.div
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            className="space-y-4"
-          >
-            <h3 className="text-xl font-heading text-primary mb-4 text-center">
-              Which furry friend needs a walk? 🐾
-            </h3>
-            <div className="grid gap-4">
+          <div className="space-y-4">
+            <h3 className="text-xl font-heading text-primary mb-4">Which furry friend needs a walk? 🐕</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {pets.map((pet) => (
-                <motion.button
+                <motion.div
                   key={pet.id}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => setBookingData({...bookingData, pet: pet.name})}
-                  className={`p-4 rounded-[var(--radius-fun)] border-2 transition-all duration-300 text-left ${
-                    bookingData.pet === pet.name
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/50"
+                  onClick={() => {
+                    setSelectedPet(pet.id);
+                    setValue('pet_id', pet.id);
+                  }}
+                  className={`fun-card cursor-pointer transition-all ${
+                    selectedPet === pet.id
+                      ? "ring-2 ring-primary bg-primary/5"
+                      : "hover:bg-accent/5"
                   }`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="text-4xl">{pet.emoji}</div>
+                    <div className="text-4xl">
+                      {pet.avatar_url ? (
+                        <img src={pet.avatar_url} alt={pet.name} className="w-12 h-12 rounded-full" />
+                      ) : (
+                        "🐕"
+                      )}
+                    </div>
                     <div>
                       <h4 className="font-semibold text-primary">{pet.name}</h4>
-                      <p className="text-sm text-muted-foreground">{pet.breed}</p>
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs mt-1 ${
-                        pet.energy === "High" ? "bg-secondary/20 text-secondary" :
-                        pet.energy === "Very High" ? "bg-destructive/20 text-destructive" :
-                        "bg-info/20 text-info"
-                      }`}>
-                        {pet.energy} Energy
-                      </span>
+                      <p className="text-sm text-muted-foreground">
+                        {pet.pet_breeds?.name || pet.custom_breed || 'Mixed Breed'}
+                      </p>
+                      {pet.energy_level && (
+                        <span className="px-2 py-1 bg-accent/20 text-accent text-xs rounded-full capitalize">
+                          {pet.energy_level.replace('_', ' ')} Energy
+                        </span>
+                      )}
                     </div>
                   </div>
-                </motion.button>
+                </motion.div>
               ))}
             </div>
-          </motion.div>
+            {pets.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">No pets found. Add a pet first!</p>
+                <Button variant="fun" onClick={() => navigate("/pets")}>
+                  Add Pet 🐕
+                </Button>
+              </div>
+            )}
+          </div>
         );
 
       case 2:
         return (
-          <motion.div
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            className="space-y-6"
-          >
-            <h3 className="text-xl font-heading text-primary mb-4 text-center">
-              When would you like the walk? ⏰
-            </h3>
+          <div className="space-y-6">
+            <h3 className="text-xl font-heading text-primary mb-4">When would you like the walk? 📅</h3>
             
+            {/* Service Type Selection */}
+            <div>
+              <Label className="text-base font-semibold">Service Type</Label>
+              {serviceTypes.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Loading service types...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                  {serviceTypes.map((service) => (
+                    <motion.div
+                      key={service.id}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        setSelectedService(service.id);
+                        setValue('service_type_id', service.id);
+                      }}
+                      className={`fun-card cursor-pointer transition-all ${
+                        selectedService === service.id
+                          ? "ring-2 ring-primary bg-primary/5"
+                          : "hover:bg-accent/5"
+                      }`}
+                    >
+                      <div className="text-center">
+                        <h4 className="font-semibold text-primary">{service.name}</h4>
+                        <p className="text-sm text-muted-foreground">{service.description}</p>
+                        <div className="mt-2">
+                          <span className="text-lg font-bold text-success">${service.base_price}</span>
+                          <span className="text-sm text-muted-foreground"> ({service.duration_minutes} min)</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Date Selection */}
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-2">
-                Select Date
-              </label>
-              <input
-                type="date"
-                value={bookingData.date}
-                onChange={(e) => setBookingData({...bookingData, date: e.target.value})}
-                className="input-fun w-full"
-                min={new Date().toISOString().split('T')[0]}
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="scheduled_date">Date</Label>
+                <Input
+                  {...register('scheduled_date', { required: true })}
+                  type="date"
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
 
-            {/* Time Selection */}
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-2">
-                Select Time
-              </label>
-              <div className="grid grid-cols-4 gap-2">
-                {timeSlots.map((time) => (
-                  <button
-                    key={time}
-                    onClick={() => setBookingData({...bookingData, time})}
-                    className={`p-2 rounded-lg border transition-all duration-300 text-sm ${
-                      bookingData.time === time
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    {time}
-                  </button>
-                ))}
+              <div>
+                <Label htmlFor="scheduled_time">Time</Label>
+                <Select onValueChange={(value) => setValue('scheduled_time', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeSlots.map((time) => (
+                      <SelectItem key={time} value={time}>
+                        {time}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-
-            {/* Duration Selection */}
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-2">
-                Walk Duration
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {durations.map((duration) => (
-                  <button
-                    key={duration.value}
-                    onClick={() => setBookingData({...bookingData, duration: duration.value})}
-                    className={`p-3 rounded-[var(--radius-fun)] border-2 transition-all duration-300 text-left ${
-                      bookingData.duration === duration.value
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <div className="font-semibold text-primary">{duration.label}</div>
-                    <div className="text-sm text-muted-foreground">${duration.price}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </motion.div>
+          </div>
         );
 
       case 3:
         return (
-          <motion.div
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            className="space-y-4"
-          >
-            <h3 className="text-xl font-heading text-primary mb-4 text-center">
-              Where should we meet? 📍
-            </h3>
+          <div className="space-y-4">
+            <h3 className="text-xl font-heading text-primary mb-4">Where should we pick up your pup? 📍</h3>
             
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-2">
-                Pickup Location
-              </label>
-              <input
-                type="text"
-                placeholder="Enter your address or meeting spot..."
-                value={bookingData.location}
-                onChange={(e) => setBookingData({...bookingData, location: e.target.value})}
-                className="input-fun w-full"
+              <Label htmlFor="pickup_address">Pickup Address *</Label>
+              <Input
+                {...register('pickup_address', { required: true })}
+                placeholder="123 Main St, City, State 12345"
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                We'll use Google Maps to find the best walking routes nearby!
-              </p>
             </div>
 
-            {/* Suggested Locations */}
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-2">
-                Popular Nearby Spots
-              </label>
-              <div className="space-y-2">
-                {["Central Park - Main Entrance", "Riverside Dog Run", "Local Neighborhood Streets"].map((location) => (
-                  <button
-                    key={location}
-                    onClick={() => setBookingData({...bookingData, location})}
-                    className={`w-full p-3 rounded-[var(--radius-fun)] border transition-all duration-300 text-left ${
-                      bookingData.location === location
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <FaMapMarkerAlt className="inline mr-2 text-primary" />
-                    {location}
-                  </button>
-                ))}
-              </div>
+              <Label htmlFor="emergency_contact_phone">Emergency Contact Phone</Label>
+              <Input
+                {...register('emergency_contact_phone')}
+                type="tel"
+                placeholder="(555) 123-4567"
+              />
             </div>
-          </motion.div>
+
+            <div>
+              <Label htmlFor="special_instructions">Special Instructions</Label>
+              <Textarea
+                {...register('special_instructions')}
+                placeholder="Any special notes for the walker? (e.g., where to find keys, pet behavior notes, etc.)"
+                rows={4}
+              />
+            </div>
+          </div>
         );
 
       case 4:
         return (
-          <motion.div
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            className="space-y-4"
-          >
-            <h3 className="text-xl font-heading text-primary mb-4 text-center">
-              Choose your perfect walker! 👨‍🦱
-            </h3>
-
-            {/* AI Recommendation Banner */}
-            <div className="fun-card bg-gradient-to-r from-success/10 to-info/10 border border-success/20">
-              <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
-                🤖 AI Recommendations
-              </h4>
-              <p className="text-sm text-card-foreground">
-                Based on {bookingData.pet}'s energy level and your preferences, these walkers are perfect matches!
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {suggestedWalkers.map((walker) => (
-                <motion.button
+          <div className="space-y-4">
+            <h3 className="text-xl font-heading text-primary mb-4">Choose your walker 👨‍🦱</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {walkers.slice(0, 6).map((walker) => (
+                <motion.div
                   key={walker.id}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => setBookingData({...bookingData, walker: walker.name})}
-                  disabled={!walker.available}
-                  className={`w-full p-4 rounded-[var(--radius-fun)] border-2 transition-all duration-300 text-left ${
-                    bookingData.walker === walker.name
-                      ? "border-primary bg-primary/10"
-                      : walker.available
-                      ? "border-border hover:border-primary/50"
-                      : "border-border opacity-50 cursor-not-allowed"
+                  onClick={() => {
+                    setSelectedWalker(walker.id);
+                    setValue('walker_id', walker.id);
+                  }}
+                  className={`fun-card cursor-pointer transition-all ${
+                    selectedWalker === walker.id
+                      ? "ring-2 ring-primary bg-primary/5"
+                      : "hover:bg-accent/5"
                   }`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="text-3xl">{walker.avatar}</div>
+                    <div className="w-12 h-12 rounded-full bg-gradient-fun flex items-center justify-center text-white font-semibold">
+                      {walker.users.first_name.charAt(0)}
+                    </div>
                     <div className="flex-1">
+                      <h4 className="font-semibold text-primary">
+                        {walker.users.first_name} {walker.users.last_name}
+                      </h4>
                       <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-primary">{walker.name}</h4>
-                        {walker.aiRecommended && (
-                          <span className="px-2 py-1 bg-secondary/20 text-secondary text-xs rounded-full">
-                            ⭐ AI Pick
-                          </span>
-                        )}
-                        {!walker.available && (
-                          <span className="px-2 py-1 bg-destructive/20 text-destructive text-xs rounded-full">
-                            Unavailable
-                          </span>
-                        )}
+                        <span className="text-yellow-500">⭐</span>
+                        <span className="text-sm">{walker.average_rating.toFixed(1)}</span>
+                        <span className="text-sm text-muted-foreground">
+                          ({walker.total_reviews} reviews)
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>⭐ {walker.rating}</span>
-                        <span>•</span>
-                        <span>${walker.price}/hour</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {walker.specialties.map((specialty) => (
-                          <span
-                            key={specialty}
-                            className="px-2 py-1 bg-accent/20 text-accent text-xs rounded-full"
-                          >
-                            {specialty}
-                          </span>
-                        ))}
-                      </div>
+                      <p className="text-sm text-success font-semibold">${walker.hourly_rate}/hour</p>
                     </div>
                   </div>
-                </motion.button>
+                </motion.div>
               ))}
             </div>
-          </motion.div>
+            
+            <div className="text-center">
+              <Button variant="outline" onClick={() => {
+                setSelectedWalker("");
+                setValue('walker_id', null);
+              }}>
+                Let PupRoute Choose for Me! 🎲
+              </Button>
+            </div>
+
+            {walkers.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No walkers available at the moment. We'll assign one for you!</p>
+              </div>
+            )}
+          </div>
         );
 
       case 5:
+        const selectedPetData = pets.find(p => p.id === selectedPet);
+        const selectedServiceData = serviceTypes.find(s => s.id === selectedService);
+        const selectedWalkerData = walkers.find(w => w.id === selectedWalker);
+        
         return (
-          <motion.div
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            className="space-y-6"
-          >
-            <h3 className="text-xl font-heading text-primary mb-4 text-center">
-              Booking Summary 💳
-            </h3>
-
-            {/* Booking Summary */}
-            <div className="fun-card bg-gradient-to-r from-primary/5 to-accent/5">
-              <h4 className="font-semibold text-primary mb-4">Your Adventure Details</h4>
-              <div className="space-y-2 text-sm">
+          <div className="space-y-6">
+            <h3 className="text-xl font-heading text-primary mb-4">Review Your Booking 📋</h3>
+            
+            <div className="fun-card">
+              <h4 className="font-semibold text-primary mb-3">Booking Summary</h4>
+              <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Pet:</span>
-                  <span className="font-medium">{bookingData.pet} 🐕</span>
+                  <span>Pet:</span>
+                  <span className="font-semibold">{selectedPetData?.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Date:</span>
-                  <span className="font-medium">{bookingData.date}</span>
+                  <span>Service:</span>
+                  <span className="font-semibold">{selectedServiceData?.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Time:</span>
-                  <span className="font-medium">{bookingData.time}</span>
+                  <span>Date:</span>
+                  <span className="font-semibold">{watch('scheduled_date')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Duration:</span>
-                  <span className="font-medium">{bookingData.duration} minutes</span>
+                  <span>Time:</span>
+                  <span className="font-semibold">{watch('scheduled_time')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Location:</span>
-                  <span className="font-medium">{bookingData.location}</span>
+                  <span>Walker:</span>
+                  <span className="font-semibold">
+                    {selectedWalkerData 
+                      ? `${selectedWalkerData.users.first_name} ${selectedWalkerData.users.last_name}`
+                      : "Auto-assigned by PupRoute"
+                    }
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Walker:</span>
-                  <span className="font-medium">{bookingData.walker}</span>
+                  <span>Address:</span>
+                  <span className="font-semibold">{watch('pickup_address')}</span>
                 </div>
-                <hr className="my-3" />
-                <div className="flex justify-between text-lg font-bold text-primary">
+                <hr />
+                <div className="flex justify-between text-lg font-bold">
                   <span>Total:</span>
-                  <span>$25.00</span>
+                  <span className="text-success">${selectedServiceData?.base_price}</span>
                 </div>
               </div>
             </div>
 
-            {/* Payment Method */}
-            <div>
-              <h4 className="font-semibold text-primary mb-3">Payment Method</h4>
-              <div className="fun-card bg-muted/20">
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">💳</div>
-                  <div>
-                    <div className="font-medium">**** **** **** 1234</div>
-                    <div className="text-sm text-muted-foreground">Expires 12/26</div>
-                  </div>
-                  <Button variant="outline" size="sm" className="ml-auto">
-                    Change
-                  </Button>
-                </div>
-              </div>
+            <div className="text-center">
+              <Button
+                variant="magical"
+                size="lg"
+                onClick={handleSubmit(onSubmit)}
+                disabled={createBookingMutation.isPending}
+                className="w-full"
+              >
+                {createBookingMutation.isPending ? "Booking..." : "Confirm Booking 🎉"}
+              </Button>
             </div>
-
-            {/* Notes */}
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-2">
-                Special Instructions (Optional)
-              </label>
-              <textarea
-                placeholder="Any special instructions for your walker..."
-                value={bookingData.notes}
-                onChange={(e) => setBookingData({...bookingData, notes: e.target.value})}
-                className="input-fun w-full h-20 resize-none"
-              />
-            </div>
-          </motion.div>
+          </div>
         );
 
       default:
@@ -506,30 +549,16 @@ const BookingNew = () => {
             </Button>
           )}
           
-          {currentStep < steps.length ? (
+          {currentStep < steps.length && (
             <Button
               variant="fun"
               size="lg"
               onClick={nextStep}
               className="flex items-center gap-2 ml-auto"
-              disabled={
-                (currentStep === 1 && !bookingData.pet) ||
-                (currentStep === 2 && (!bookingData.date || !bookingData.time || !bookingData.duration)) ||
-                (currentStep === 3 && !bookingData.location) ||
-                (currentStep === 4 && !bookingData.walker)
-              }
+              disabled={!canProceed()}
             >
               Next
               <FaArrowRight />
-            </Button>
-          ) : (
-            <Button
-              variant="magical"
-              size="lg"
-              onClick={completeBooking}
-              className="flex items-center gap-2 ml-auto"
-            >
-              Confirm Booking 🎉
             </Button>
           )}
         </motion.div>

@@ -4,9 +4,18 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { FaMapMarkerAlt, FaClock, FaStar, FaHeart, FaBone, FaCalendarAlt } from "react-icons/fa";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { useUpcomingBookings } from "@/hooks/useBookings";
+import { usePets } from "@/hooks/usePets";
+import { useLoyaltyAccount } from "@/hooks/useData";
+import { format } from "date-fns";
 
 const Dashboard = () => {
   const [greeting, setGreeting] = useState("");
+  const { user } = useAuth();
+  const { data: upcomingBookings = [], isLoading: loadingBookings } = useUpcomingBookings();
+  const { data: pets = [], isLoading: loadingPets } = usePets();
+  const { data: loyaltyAccount } = useLoyaltyAccount();
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -15,41 +24,40 @@ const Dashboard = () => {
     else setGreeting("Good Evening");
   }, []);
 
-  const upcomingBookings = [
-    {
-      id: 1,
-      walkerName: "Sarah Johnson",
-      walkerAvatar: "👩‍🦱",
-      petName: "Buddy",
-      petEmoji: "🐕",
-      time: "2:00 PM Today",
-      location: "Central Park",
-      status: "confirmed"
-    },
-    {
-      id: 2,
-      walkerName: "Mike Chen",
-      walkerAvatar: "👨",
-      petName: "Luna",
-      petEmoji: "🐩",
-      time: "10:00 AM Tomorrow",
-      location: "Riverside Trail",
-      status: "pending"
-    }
-  ];
+  const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || "Friend";
 
   const stats = [
-    { icon: FaCalendarAlt, label: "Walks This Month", value: "12", color: "text-success" },
-    { icon: FaHeart, label: "Favorite Walkers", value: "3", color: "text-destructive" },
-    { icon: FaStar, label: "Happy Memories", value: "48", color: "text-secondary" },
-    { icon: FaBone, label: "Treats Earned", value: "24", color: "text-accent" },
+    { 
+      icon: FaCalendarAlt, 
+      label: "Completed Walks", 
+      value: upcomingBookings.filter(b => b.status === 'completed').length.toString(), 
+      color: "text-success" 
+    },
+    { 
+      icon: FaHeart, 
+      label: "Registered Pets", 
+      value: pets.length.toString(), 
+      color: "text-destructive" 
+    },
+    { 
+      icon: FaStar, 
+      label: "Loyalty Points", 
+      value: loyaltyAccount?.current_points?.toString() || "0", 
+      color: "text-secondary" 
+    },
+    { 
+      icon: FaBone, 
+      label: "Active Bookings", 
+      value: upcomingBookings.filter(b => ['pending', 'confirmed', 'walker_assigned'].includes(b.status || '')).length.toString(), 
+      color: "text-accent" 
+    },
   ];
 
   const aiTips = [
     "🌟 Perfect weather for a park adventure today!",
-    "🎾 Buddy seems extra energetic - maybe try the longer trail?",
+    `🎾 ${pets[0]?.name || 'Your pup'} seems extra energetic - maybe try the longer trail?`,
     "📸 Don't forget to ask for photos during the walk!",
-    "💝 You're just 2 walks away from a free treat reward!"
+    "💝 You're getting closer to earning loyalty rewards!"
   ];
 
   return (
@@ -62,7 +70,7 @@ const Dashboard = () => {
           className="mb-8"
         >
           <h1 className="text-4xl font-heading text-primary mb-2">
-            {greeting}, Emma! 👋
+            {greeting}, {firstName}! 👋
           </h1>
           <p className="text-lg text-muted-foreground">
             Ready for some pawsome adventures today?
@@ -139,45 +147,83 @@ const Dashboard = () => {
             Upcoming Adventures
           </h2>
           <div className="space-y-4">
-            {upcomingBookings.map((booking, index) => (
-              <motion.div
-                key={booking.id}
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.4 + index * 0.1 }}
-                whileHover={{ scale: 1.02 }}
-                className="fun-card cursor-pointer"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="text-4xl">{booking.walkerAvatar}</div>
-                    <div>
-                      <h4 className="font-semibold text-primary">{booking.walkerName}</h4>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <span>{booking.petEmoji}</span>
-                        {booking.petName} • {booking.location}
-                      </p>
-                      <p className="text-sm font-medium text-info">{booking.time}</p>
+            {loadingBookings ? (
+              <div className="fun-card animate-pulse">
+                <div className="h-20 bg-muted rounded"></div>
+              </div>
+            ) : upcomingBookings.length > 0 ? (
+              upcomingBookings.map((booking, index) => (
+                <motion.div
+                  key={booking.id}
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 + index * 0.1 }}
+                  whileHover={{ scale: 1.02 }}
+                  className="fun-card cursor-pointer"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="text-4xl">
+                        {booking.walker_first_name ? "👤" : "🔍"}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-primary">
+                          {booking.walker_first_name 
+                            ? `${booking.walker_first_name} ${booking.walker_last_name}`
+                            : "Walker Pending"
+                          }
+                        </h4>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <span>🐕</span>
+                          {booking.pet_name} • {booking.pickup_address}
+                        </p>
+                        <p className="text-sm font-medium text-info">
+                          {booking.scheduled_date && booking.scheduled_time 
+                            ? `${format(new Date(booking.scheduled_date), 'MMM d')} at ${booking.scheduled_time}`
+                            : "Date pending"
+                          }
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        variant={booking.status === "confirmed" ? "success" : "secondary"}
+                        size="sm"
+                      >
+                        {booking.status === "confirmed" ? "Track Live" : 
+                         booking.status === "walker_assigned" ? "Ready" : "Pending"}
+                      </Button>
+                      {booking.status === "confirmed" && (
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to={`/walk/${booking.id}/track`}>
+                            View Details
+                          </Link>
+                        </Button>
+                      )}
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      variant={booking.status === "confirmed" ? "success" : "secondary"}
-                      size="sm"
-                    >
-                      {booking.status === "confirmed" ? "Track Live" : "Confirm"}
-                    </Button>
-                    {booking.status === "confirmed" && (
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/walk/${booking.id}/track`}>
-                          View Details
-                        </Link>
-                      </Button>
-                    )}
-                  </div>
-                </div>
+                </motion.div>
+              ))
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="fun-card text-center"
+              >
+                <div className="text-6xl mb-4">🐕</div>
+                <h3 className="text-xl font-heading text-primary mb-2">
+                  No Walks Scheduled
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  Ready to book your first adventure?
+                </p>
+                <Button variant="fun" asChild>
+                  <Link to="/bookings/new">
+                    Book Your First Walk! 🚀
+                  </Link>
+                </Button>
               </motion.div>
-            ))}
+            )}
           </div>
         </motion.div>
 

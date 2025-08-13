@@ -2,84 +2,113 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FaPlus, FaEdit, FaTrash, FaSearch, FaBirthdayCake, FaWeight } from "react-icons/fa";
 import { toast } from "sonner";
+import { usePets, useAddPet, useUpdatePet, usePetBreeds } from "@/hooks/usePets";
+import { useForm } from "react-hook-form";
 
 const Pets = () => {
   const [searchQuery, setSearchQuery] = useState("");
-
-  const pets = [
-    {
-      id: 1,
-      name: "Buddy",
-      breed: "Golden Retriever",
-      age: "3 years",
-      weight: "65 lbs",
-      avatar: "🐕",
-      color: "Golden",
-      personality: ["Energetic", "Friendly", "Playful"],
-      allergies: ["Chicken"],
-      lastWalk: "2 hours ago",
-      nextWalk: "Tomorrow 2:00 PM",
-      status: "Happy"
-    },
-    {
-      id: 2,
-      name: "Luna",
-      breed: "French Bulldog",
-      age: "2 years",
-      weight: "25 lbs",
-      avatar: "🐩",
-      color: "Fawn",
-      personality: ["Calm", "Loving", "Gentle"],
-      allergies: ["None"],
-      lastWalk: "5 hours ago",
-      nextWalk: "Today 6:00 PM",
-      status: "Sleepy"
-    },
-    {
-      id: 3,
-      name: "Max",
-      breed: "Border Collie",
-      age: "5 years", 
-      weight: "45 lbs",
-      avatar: "🐺",
-      color: "Black & White",
-      personality: ["Smart", "Active", "Loyal"],
-      allergies: ["Beef", "Dairy"],
-      lastWalk: "1 day ago",
-      nextWalk: "Not scheduled",
-      status: "Excited"
-    }
-  ];
+  const [selectedPet, setSelectedPet] = useState<any>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
+  const { data: pets = [], isLoading } = usePets();
+  const { data: breeds = [] } = usePetBreeds();
+  const addPetMutation = useAddPet();
+  const updatePetMutation = useUpdatePet();
+  
+  const { register, handleSubmit, reset, setValue, watch } = useForm();
 
   const filteredPets = pets.filter(pet =>
     pet.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    pet.breed.toLowerCase().includes(searchQuery.toLowerCase())
+    (pet.pet_breeds?.name || pet.custom_breed || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const deletePet = (petId: number, petName: string) => {
-    toast.error(`${petName} removed from your pack 😢`, {
-      description: "You can always add them back later!"
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Happy": return "text-success";
-      case "Sleepy": return "text-info";
-      case "Excited": return "text-secondary";
-      default: return "text-muted-foreground";
+  const onAddPet = async (data: any) => {
+    try {
+      await addPetMutation.mutateAsync({
+        name: data.name,
+        breed_id: data.breed_id || null,
+        custom_breed: data.custom_breed || null,
+        date_of_birth: data.date_of_birth || null,
+        gender: data.gender || null,
+        weight: data.weight ? parseFloat(data.weight) : null,
+        color: data.color || null,
+        energy_level: data.energy_level || null,
+        special_instructions: data.special_instructions || null,
+        good_with_dogs: data.good_with_dogs !== undefined ? data.good_with_dogs : true,
+        good_with_cats: data.good_with_cats !== undefined ? data.good_with_cats : true,
+        good_with_children: data.good_with_children !== undefined ? data.good_with_children : true,
+      });
+      toast.success(`${data.name} has joined your pack! 🐕`, {
+        description: "Ready for their first adventure!"
+      });
+      setIsAddDialogOpen(false);
+      reset();
+    } catch (error: any) {
+      toast.error("Failed to add pet: " + error.message);
     }
   };
 
-  const getStatusEmoji = (status: string) => {
-    switch (status) {
-      case "Happy": return "😊";
-      case "Sleepy": return "😴";
-      case "Excited": return "🤩";
-      default: return "😐";
+  const onEditPet = async (data: any) => {
+    try {
+      await updatePetMutation.mutateAsync({
+        id: selectedPet.id,
+        ...data,
+        weight: data.weight ? parseFloat(data.weight) : null,
+      });
+      toast.success(`${data.name} updated successfully! ✨`);
+      setIsEditDialogOpen(false);
+      setSelectedPet(null);
+      reset();
+    } catch (error: any) {
+      toast.error("Failed to update pet: " + error.message);
     }
+  };
+
+  const openEditDialog = (pet: any) => {
+    setSelectedPet(pet);
+    setValue('name', pet.name);
+    setValue('breed_id', pet.breed_id);
+    setValue('custom_breed', pet.custom_breed);
+    setValue('date_of_birth', pet.date_of_birth);
+    setValue('gender', pet.gender);
+    setValue('weight', pet.weight);
+    setValue('color', pet.color);
+    setValue('energy_level', pet.energy_level);
+    setValue('special_instructions', pet.special_instructions);
+    setValue('good_with_dogs', pet.good_with_dogs);
+    setValue('good_with_cats', pet.good_with_cats);
+    setValue('good_with_children', pet.good_with_children);
+    setIsEditDialogOpen(true);
+  };
+
+  const getEnergyEmoji = (energy: string | null) => {
+    switch (energy) {
+      case 'low': return '😴';
+      case 'medium': return '🚶';
+      case 'high': return '🏃';
+      case 'very_high': return '⚡';
+      default: return '🐕';
+    }
+  };
+
+  const calculateAge = (dateOfBirth: string | null) => {
+    if (!dateOfBirth) return 'Unknown age';
+    const today = new Date();
+    const birth = new Date(dateOfBirth);
+    const months = (today.getFullYear() - birth.getFullYear()) * 12 + (today.getMonth() - birth.getMonth());
+    
+    if (months < 12) return `${months} months`;
+    const years = Math.floor(months / 12);
+    const remainingMonths = months % 12;
+    return remainingMonths > 0 ? `${years}y ${remainingMonths}m` : `${years} years`;
   };
 
   return (
@@ -119,135 +148,243 @@ const Pets = () => {
           </div>
 
           {/* Add Pet Button */}
-          <Button variant="magical" size="lg" asChild>
-            <Link to="/pets/new" className="flex items-center gap-2">
-              <FaPlus />
-              Add New Pet 🐕
-            </Link>
-          </Button>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="magical" size="lg" className="flex items-center gap-2">
+                <FaPlus />
+                Add New Pet 🐕
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Add New Pet 🐾</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit(onAddPet)} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="name">Pet Name *</Label>
+                    <Input {...register('name', { required: true })} placeholder="Buddy" />
+                  </div>
+                  <div>
+                    <Label htmlFor="breed_id">Breed</Label>
+                    <Select onValueChange={(value) => setValue('breed_id', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select breed" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {breeds.map((breed) => (
+                          <SelectItem key={breed.id} value={breed.id}>
+                            {breed.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="custom_breed">Custom Breed (if not listed)</Label>
+                    <Input {...register('custom_breed')} placeholder="Mixed breed" />
+                  </div>
+                  <div>
+                    <Label htmlFor="date_of_birth">Date of Birth</Label>
+                    <Input {...register('date_of_birth')} type="date" />
+                  </div>
+                  <div>
+                    <Label htmlFor="gender">Gender</Label>
+                    <Select onValueChange={(value) => setValue('gender', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="unknown">Unknown</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="weight">Weight (lbs)</Label>
+                    <Input {...register('weight')} type="number" step="0.1" placeholder="25" />
+                  </div>
+                  <div>
+                    <Label htmlFor="color">Color</Label>
+                    <Input {...register('color')} placeholder="Golden" />
+                  </div>
+                  <div>
+                    <Label htmlFor="energy_level">Energy Level</Label>
+                    <Select onValueChange={(value) => setValue('energy_level', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select energy level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low 😴</SelectItem>
+                        <SelectItem value="medium">Medium 🚶</SelectItem>
+                        <SelectItem value="high">High 🏃</SelectItem>
+                        <SelectItem value="very_high">Very High ⚡</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="special_instructions">Special Instructions</Label>
+                  <Textarea {...register('special_instructions')} placeholder="Any special care instructions..." />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <input {...register('good_with_dogs')} type="checkbox" defaultChecked />
+                    <Label>Good with dogs</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input {...register('good_with_cats')} type="checkbox" defaultChecked />
+                    <Label>Good with cats</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input {...register('good_with_children')} type="checkbox" defaultChecked />
+                    <Label>Good with children</Label>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="fun" disabled={addPetMutation.isPending}>
+                    {addPetMutation.isPending ? "Adding..." : "Add Pet 🐕"}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </motion.div>
 
         {/* Pets Grid */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {filteredPets.map((pet, index) => (
-            <motion.div
-              key={pet.id}
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.3 + index * 0.1 }}
-              whileHover={{ scale: 1.02 }}
-              className="fun-card relative overflow-hidden"
-            >
-              {/* Pet Avatar and Status */}
-              <div className="text-center mb-4">
-                <div className="relative inline-block">
-                  <div className="text-6xl mb-2">{pet.avatar}</div>
-                  <div className="absolute -top-2 -right-2 text-2xl">
-                    {getStatusEmoji(pet.status)}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="fun-card animate-pulse">
+                <div className="h-48 bg-muted rounded"></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {filteredPets.map((pet, index) => (
+              <motion.div
+                key={pet.id}
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.3 + index * 0.1 }}
+                whileHover={{ scale: 1.02 }}
+                className="fun-card relative overflow-hidden"
+              >
+                {/* Pet Avatar and Energy Level */}
+                <div className="text-center mb-4">
+                  <div className="relative inline-block">
+                    <div className="text-6xl mb-2">
+                      {pet.avatar_url ? (
+                        <img src={pet.avatar_url} alt={pet.name} className="w-16 h-16 rounded-full mx-auto" />
+                      ) : (
+                        getEnergyEmoji(pet.energy_level)
+                      )}
+                    </div>
+                    {pet.energy_level && (
+                      <div className="absolute -top-2 -right-2 text-2xl">
+                        {getEnergyEmoji(pet.energy_level)}
+                      </div>
+                    )}
+                  </div>
+                  {pet.energy_level && (
+                    <div className="text-sm font-medium text-primary capitalize">
+                      {pet.energy_level.replace('_', ' ')} Energy
+                    </div>
+                  )}
+                </div>
+
+                {/* Pet Info */}
+                <div className="text-center mb-4">
+                  <h3 className="text-xl font-heading text-primary mb-1">{pet.name}</h3>
+                  <p className="text-muted-foreground text-sm mb-2">
+                    {pet.pet_breeds?.name || pet.custom_breed || 'Mixed Breed'}
+                  </p>
+                  <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <FaBirthdayCake />
+                      <span>{calculateAge(pet.date_of_birth)}</span>
+                    </div>
+                    {pet.weight && (
+                      <div className="flex items-center gap-1">
+                        <FaWeight />
+                        <span>{pet.weight} lbs</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className={`text-sm font-medium ${getStatusColor(pet.status)}`}>
-                  {pet.status}
-                </div>
-              </div>
 
-              {/* Pet Info */}
-              <div className="text-center mb-4">
-                <h3 className="text-xl font-heading text-primary mb-1">{pet.name}</h3>
-                <p className="text-muted-foreground text-sm mb-2">{pet.breed}</p>
-                <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <FaBirthdayCake />
-                    <span>{pet.age}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <FaWeight />
-                    <span>{pet.weight}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Personality Tags */}
-              <div className="flex flex-wrap gap-1 mb-4 justify-center">
-                {pet.personality.map((trait) => (
-                  <span
-                    key={trait}
-                    className="px-2 py-1 bg-success/20 text-success text-xs rounded-full"
-                  >
-                    {trait}
-                  </span>
-                ))}
-              </div>
-
-              {/* Walk Info */}
-              <div className="bg-muted/20 rounded-[var(--radius-fun)] p-3 mb-4">
-                <div className="text-sm space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Last walk:</span>
-                    <span className="font-medium">{pet.lastWalk}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Next walk:</span>
-                    <span className={`font-medium ${
-                      pet.nextWalk === "Not scheduled" ? "text-destructive" : "text-success"
-                    }`}>
-                      {pet.nextWalk}
+                {/* Pet Details */}
+                {pet.color && (
+                  <div className="text-center mb-4">
+                    <span className="px-2 py-1 bg-success/20 text-success text-xs rounded-full">
+                      {pet.color}
                     </span>
                   </div>
-                </div>
-              </div>
+                )}
 
-              {/* Allergies */}
-              {pet.allergies.length > 0 && pet.allergies[0] !== "None" && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-destructive mb-1">⚠️ Allergies:</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {pet.allergies.map((allergy) => (
-                      <span
-                        key={allergy}
-                        className="px-2 py-1 bg-destructive/20 text-destructive text-xs rounded-full"
-                      >
-                        {allergy}
-                      </span>
-                    ))}
+                {/* Behavior Tags */}
+                <div className="flex flex-wrap gap-1 mb-4 justify-center">
+                  {pet.good_with_dogs && (
+                    <span className="px-2 py-1 bg-info/20 text-info text-xs rounded-full">
+                      🐕 Dog Friendly
+                    </span>
+                  )}
+                  {pet.good_with_cats && (
+                    <span className="px-2 py-1 bg-warning/20 text-warning text-xs rounded-full">
+                      🐱 Cat Friendly
+                    </span>
+                  )}
+                  {pet.good_with_children && (
+                    <span className="px-2 py-1 bg-success/20 text-success text-xs rounded-full">
+                      👶 Kid Friendly
+                    </span>
+                  )}
+                </div>
+
+                {/* Special Instructions */}
+                {pet.special_instructions && (
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium text-primary mb-1">📝 Special Notes:</h4>
+                    <p className="text-xs text-muted-foreground">
+                      {pet.special_instructions.substring(0, 100)}
+                      {pet.special_instructions.length > 100 && '...'}
+                    </p>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Actions */}
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => toast.info(`Editing ${pet.name}'s profile`)}
-                >
-                  <FaEdit className="w-4 h-4" />
-                </Button>
-                <Button variant="fun" size="sm" className="flex-2" asChild>
-                  <Link to="/bookings/new" className="flex items-center gap-1">
-                    Book Walk
-                  </Link>
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => deletePet(pet.id, pet.name)}
-                >
-                  <FaTrash className="w-4 h-4" />
-                </Button>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => openEditDialog(pet)}
+                  >
+                    <FaEdit className="w-4 h-4" />
+                  </Button>
+                  <Button variant="fun" size="sm" className="flex-2" asChild>
+                    <Link to={`/bookings/new?pet=${pet.id}`} className="flex items-center gap-1">
+                      Book Walk
+                    </Link>
+                  </Button>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
 
         {/* Empty State */}
-        {filteredPets.length === 0 && (
+        {!isLoading && filteredPets.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -264,18 +401,16 @@ const Pets = () => {
               }
             </p>
             {!searchQuery && (
-              <Button variant="magical" size="lg" asChild>
-                <Link to="/pets/new" className="flex items-center gap-2">
-                  <FaPlus />
-                  Add Your First Pet 🎉
-                </Link>
+              <Button variant="magical" size="lg" onClick={() => setIsAddDialogOpen(true)}>
+                <FaPlus className="mr-2" />
+                Add Your First Pet 🎉
               </Button>
             )}
           </motion.div>
         )}
 
         {/* AI Tip */}
-        {filteredPets.length > 0 && (
+        {!isLoading && filteredPets.length > 0 && (
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -288,13 +423,112 @@ const Pets = () => {
               </h3>
               <p className="text-sm text-card-foreground">
                 Based on your pets' activity levels, we recommend scheduling walks every 6-8 hours for optimal health and happiness! 
-                {filteredPets.some(pet => pet.nextWalk === "Not scheduled") && (
-                  <span className="text-destructive font-medium"> Some of your pets need walks scheduled. </span>
-                )}
+                Keep your furry friends active and happy with regular exercise.
               </p>
             </div>
           </motion.div>
         )}
+
+        {/* Edit Pet Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit {selectedPet?.name} 🐾</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit(onEditPet)} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Pet Name *</Label>
+                  <Input {...register('name', { required: true })} />
+                </div>
+                <div>
+                  <Label htmlFor="breed_id">Breed</Label>
+                  <Select onValueChange={(value) => setValue('breed_id', value)} value={watch('breed_id')}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select breed" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {breeds.map((breed) => (
+                        <SelectItem key={breed.id} value={breed.id}>
+                          {breed.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="custom_breed">Custom Breed</Label>
+                  <Input {...register('custom_breed')} />
+                </div>
+                <div>
+                  <Label htmlFor="date_of_birth">Date of Birth</Label>
+                  <Input {...register('date_of_birth')} type="date" />
+                </div>
+                <div>
+                  <Label htmlFor="gender">Gender</Label>
+                  <Select onValueChange={(value) => setValue('gender', value)} value={watch('gender')}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="unknown">Unknown</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="weight">Weight (lbs)</Label>
+                  <Input {...register('weight')} type="number" step="0.1" />
+                </div>
+                <div>
+                  <Label htmlFor="color">Color</Label>
+                  <Input {...register('color')} />
+                </div>
+                <div>
+                  <Label htmlFor="energy_level">Energy Level</Label>
+                  <Select onValueChange={(value) => setValue('energy_level', value)} value={watch('energy_level')}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select energy level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low 😴</SelectItem>
+                      <SelectItem value="medium">Medium 🚶</SelectItem>
+                      <SelectItem value="high">High 🏃</SelectItem>
+                      <SelectItem value="very_high">Very High ⚡</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="special_instructions">Special Instructions</Label>
+                <Textarea {...register('special_instructions')} />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="flex items-center space-x-2">
+                  <input {...register('good_with_dogs')} type="checkbox" />
+                  <Label>Good with dogs</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input {...register('good_with_cats')} type="checkbox" />
+                  <Label>Good with cats</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input {...register('good_with_children')} type="checkbox" />
+                  <Label>Good with children</Label>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="fun" disabled={updatePetMutation.isPending}>
+                  {updatePetMutation.isPending ? "Updating..." : "Update Pet ✨"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
 
         {/* Floating Action Button */}
         <motion.div
@@ -307,11 +541,9 @@ const Pets = () => {
             variant="magical"
             size="xl"
             className="rounded-full shadow-[var(--shadow-glow)] animate-pulse"
-            asChild
+            onClick={() => setIsAddDialogOpen(true)}
           >
-            <Link to="/pets/new">
-              🐕
-            </Link>
+            🐕
           </Button>
         </motion.div>
       </div>

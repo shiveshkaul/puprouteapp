@@ -1,33 +1,95 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { FaGoogle, FaEnvelope, FaLock, FaPaw } from "react-icons/fa";
+import { Input } from "@/components/ui/input";
+import { FaGoogle, FaEnvelope, FaLock } from "react-icons/fa";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
 import heroBackground from "@/assets/hero-background.jpg";
 
 const Login = () => {
+  const [showEmailLogin, setShowEmailLogin] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate login
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success("Welcome back to PupRoute! 🐕", {
-        description: "Time for some pawsome adventures!"
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
+
+      if (error) {
+        // If user doesn't exist, try to sign up
+        if (error.message.includes('Invalid login credentials')) {
+          const { error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                first_name: email.split('@')[0],
+                last_name: '',
+              },
+            },
+          });
+
+          if (signUpError) throw signUpError;
+          
+          toast.success("Account created! Welcome to PupRoute! 🐕");
+        } else {
+          throw error;
+        }
+      } else {
+        toast.success("Welcome back to PupRoute! 🐕");
+      }
+      
       navigate("/dashboard");
-    }, 2000);
+    } catch (error: any) {
+      toast.error(error.message || "Something went wrong");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleGoogleLogin = () => {
-    toast.success("Google login coming soon! 🌟");
+  const handleGoogleLogin = async () => {
+    try {
+      console.log('Current origin:', window.location.origin);
+      console.log('Initiating Google OAuth...');
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+          scopes: 'openid email profile',
+        },
+      });
+
+      if (error) {
+        console.error('Google OAuth error:', error);
+        toast.error(`Authentication error: ${error.message}`);
+      } else {
+        console.log('Google OAuth initiated successfully');
+        // The redirect will happen automatically
+      }
+    } catch (error: any) {
+      console.error('Google login error:', error);
+      toast.error("Google login error: " + error.message);
+    }
   };
 
   return (
@@ -78,7 +140,7 @@ const Login = () => {
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="text-center mb-6"
+              className="text-center mb-8"
             >
               <motion.div
                 whileHover={{ scale: 1.1, rotate: 10 }}
@@ -87,113 +149,123 @@ const Login = () => {
                 🐕
               </motion.div>
               <h1 className="text-3xl font-heading text-primary mb-2">
-                Adventure Awaits!
+                Welcome to PupRoute!
               </h1>
               <p className="text-muted-foreground">
-                Welcome back to your PupRoute family
+                Your dog walking adventure starts here
               </p>
             </motion.div>
 
-            {/* Form */}
-            <form onSubmit={handleLogin} className="space-y-4">
-              <motion.div
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
+            {/* Google Login Button */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="space-y-4"
+            >
+              <Button
+                type="button"
+                variant="fun"
+                size="lg"
+                className="w-full"
+                onClick={handleGoogleLogin}
               >
-                <div className="relative">
-                  <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary" />
-                  <input
-                    type="email"
-                    placeholder="Your email address"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="input-fun w-full pl-10"
-                    required
-                    autoFocus
-                  />
-                </div>
-              </motion.div>
+                <FaGoogle className="mr-2 text-white" />
+                Continue with Google
+              </Button>
 
-              <motion.div
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-              >
-                <div className="relative">
-                  <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary" />
-                  <input
-                    type="password"
-                    placeholder="Your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="input-fun w-full pl-10"
-                    required
-                  />
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="space-y-3"
-              >
-                <Button
-                  type="submit"
-                  variant="fun"
-                  size="lg"
-                  className="w-full"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    >
-                      <FaPaw />
-                    </motion.div>
-                  ) : (
-                    "Start Your Adventure! 🚀"
-                  )}
-                </Button>
-
+              <div className="text-center">
                 <Button
                   type="button"
-                  variant="outline"
-                  size="lg"
-                  className="w-full"
-                  onClick={handleGoogleLogin}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowEmailLogin(!showEmailLogin)}
+                  className="text-sm text-muted-foreground hover:text-primary"
                 >
-                  <FaGoogle className="text-red-500" />
-                  Continue with Google
+                  {showEmailLogin ? "Hide" : "Or use email/password"}
                 </Button>
-              </motion.div>
-            </form>
+              </div>
 
-            {/* Footer */}
+              {/* Email/Password Form */}
+              {showEmailLogin && (
+                <motion.form
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  onSubmit={handleEmailLogin}
+                  className="space-y-4 border-t pt-4"
+                >
+                  <div className="relative">
+                    <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      placeholder="your.email@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="relative">
+                    <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      type="password"
+                      placeholder="your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    size="lg"
+                    className="w-full"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Signing in..." : "Sign in / Sign up"}
+                  </Button>
+                  
+                  <p className="text-xs text-muted-foreground text-center">
+                    We'll create an account if you don't have one
+                  </p>
+                </motion.form>
+              )}
+
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">
+                  Sign in to start booking amazing walks for your furry friends! 🐾
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Features */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
-              className="mt-6 text-center"
+              className="mt-8 space-y-3"
             >
-              <p className="text-muted-foreground">
-                New to PupRoute?{" "}
-                <Link
-                  to="/signup"
-                  className="text-primary font-semibold hover:underline"
-                >
-                  Join the pack! 🐾
-                </Link>
-              </p>
-              
-              <p className="text-xs text-muted-foreground mt-4">
-                Forgot your password?{" "}
-                <button className="text-primary hover:underline">
-                  Get help here
-                </button>
-              </p>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span className="text-lg">🗺️</span>
+                <span>Real-time GPS tracking</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span className="text-lg">📸</span>
+                <span>Live photos during walks</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span className="text-lg">⭐</span>
+                <span>Trusted, rated walkers</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span className="text-lg">🎯</span>
+                <span>AI-powered recommendations</span>
+              </div>
             </motion.div>
           </div>
         </motion.div>

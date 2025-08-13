@@ -1,11 +1,25 @@
 import { motion } from "framer-motion";
-import { NavLink, useLocation } from "react-router-dom";
-import { FaHome, FaCalendarAlt, FaPaw, FaUser, FaSearch } from "react-icons/fa";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { FaHome, FaCalendarAlt, FaPaw, FaUser, FaSearch, FaSignOutAlt } from "react-icons/fa";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 import logoPup from "@/assets/logo-pup.png";
 
 const Navigation = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success("See you later! 👋");
+      navigate("/login");
+    } catch (error) {
+      toast.error("Error signing out");
+    }
+  };
 
   const navItems = [
     { icon: FaHome, label: "Home", path: "/dashboard" },
@@ -46,13 +60,25 @@ const Navigation = () => {
             </div>
           </div>
 
-          {/* User Avatar */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="w-10 h-10 rounded-full bg-gradient-fun flex items-center justify-center text-white font-semibold"
-          >
-            👤
-          </motion.div>
+          {/* User Avatar & Menu */}
+          <div className="flex items-center gap-2">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="w-10 h-10 rounded-full bg-gradient-fun flex items-center justify-center text-white font-semibold"
+              title={user?.email || "User"}
+            >
+              {user?.email?.charAt(0).toUpperCase() || "U"}
+            </motion.div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleSignOut}
+              className="p-2 rounded-full hover:bg-destructive/10 text-destructive transition-colors"
+              title="Sign Out"
+            >
+              <FaSignOutAlt className="w-4 h-4" />
+            </motion.button>
+          </div>
         </div>
       </motion.header>
 
@@ -133,6 +159,7 @@ const Navigation = () => {
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            onClick={() => navigate("/bookings/new")}
             className="w-full p-3 bg-gradient-fun text-white rounded-[var(--radius-fun)] font-semibold shadow-[var(--shadow-fun)] hover:shadow-[var(--shadow-glow)] transition-all duration-300"
           >
             Book a Walk 🚶‍♂️
@@ -140,10 +167,33 @@ const Navigation = () => {
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            onClick={() => navigate("/pets")}
             className="w-full p-3 bg-gradient-magical text-white rounded-[var(--radius-fun)] font-semibold shadow-[var(--shadow-fun)] hover:shadow-[var(--shadow-glow)] transition-all duration-300"
           >
             Add New Pet 🐕
           </motion.button>
+        </div>
+
+        {/* User Info & Sign Out */}
+        <div className="mt-auto pt-4 border-t border-border">
+          <div className="flex items-center gap-3 p-3 rounded-[var(--radius-fun)] bg-muted/50">
+            <div className="w-10 h-10 rounded-full bg-gradient-fun flex items-center justify-center text-white font-semibold">
+              {user?.email?.charAt(0).toUpperCase() || "U"}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold truncate">{user?.email}</p>
+              <p className="text-xs text-muted-foreground">Pet Parent</p>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleSignOut}
+              className="p-2 rounded-full hover:bg-destructive/10 text-destructive transition-colors"
+              title="Sign Out"
+            >
+              <FaSignOutAlt className="w-4 h-4" />
+            </motion.button>
+          </div>
         </div>
       </motion.nav>
     </>
