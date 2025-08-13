@@ -5,24 +5,29 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-fun)] text-sm font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "bg-primary text-primary-foreground shadow-[var(--shadow-bubbly)] hover:bg-primary/90 hover:shadow-[var(--shadow-fun)] hover:-translate-y-1",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-secondary text-secondary-foreground shadow-[var(--shadow-bubbly)] hover:bg-secondary/80 hover:shadow-[var(--shadow-fun)] hover:-translate-y-1",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        fun: "bg-gradient-fun text-white shadow-[var(--shadow-fun)] hover:shadow-[var(--shadow-glow)] hover:-translate-y-2 hover:scale-105",
+        magical: "bg-gradient-magical text-white shadow-[var(--shadow-fun)] hover:shadow-[var(--shadow-glow)] hover:-translate-y-2 hover:scale-105 animate-pulse",
+        success: "bg-success text-success-foreground shadow-[var(--shadow-bubbly)] hover:bg-success/90 hover:shadow-[var(--shadow-fun)] hover:-translate-y-1",
+        info: "bg-info text-info-foreground shadow-[var(--shadow-bubbly)] hover:bg-info/90 hover:shadow-[var(--shadow-fun)] hover:-translate-y-1",
       },
       size: {
-        default: "h-10 px-4 py-2",
+        default: "h-12 px-6 py-3",
         sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
+        lg: "h-14 rounded-[var(--radius-fun)] px-8 text-base",
+        xl: "h-16 rounded-[var(--radius-bubble)] px-10 text-lg font-bold",
         icon: "h-10 w-10",
       },
     },

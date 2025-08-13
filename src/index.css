@@ -2,95 +2,94 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* PupRoute Design System - Kids-themed vibrant colors and playful styles */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Base colors - using bright, fun HSL values */
+    --background: 255 245 230; /* Warm cream background */
+    --foreground: 60 9% 8%; /* Dark text for contrast */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Card colors - soft pastels */
+    --card: 0 0% 100%; /* Pure white cards */
+    --card-foreground: 60 9% 8%;
 
+    /* Popover colors */
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 60 9% 8%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Hot Pink (#FF69B4) */
+    --primary: 330 100% 71%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 330 100% 85%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Golden Yellow (#FFD700) */
+    --secondary: 51 100% 50%;
+    --secondary-foreground: 60 9% 8%;
+    --secondary-glow: 51 100% 70%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Success - Lime Green (#00FF00) */
+    --success: 120 100% 50%;
+    --success-foreground: 0 0% 100%;
+    --success-glow: 120 100% 70%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Info - Sky Blue (#4A90E2) */
+    --info: 210 77% 58%;
+    --info-foreground: 0 0% 100%;
+    --info-glow: 210 77% 75%;
 
-    --destructive: 0 84.2% 60.2%;
+    /* Accent - Coral Orange (#FFA07A) */
+    --accent: 16 100% 74%;
+    --accent-foreground: 60 9% 8%;
+    --accent-glow: 16 100% 85%;
+
+    /* Muted colors */
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    /* Destructive colors */
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Border and input */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 330 100% 71%;
 
-    --radius: 0.5rem;
+    /* Fun gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-glow)));
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(var(--success-glow)));
+    --gradient-fun: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--primary)));
+    --gradient-sky: linear-gradient(135deg, hsl(var(--info)), hsl(var(--accent)));
+    --gradient-magical: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--success)));
 
-    --sidebar-background: 0 0% 98%;
+    /* Playful shadows with color */
+    --shadow-fun: 0 10px 30px -5px hsl(var(--primary) / 0.3);
+    --shadow-glow: 0 0 40px hsl(var(--secondary) / 0.4);
+    --shadow-bubbly: 0 8px 32px -8px hsl(var(--accent) / 0.25);
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Animation variables */
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-spring: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Spacing for consistency */
+    --radius-fun: 2rem; /* 32px super rounded */
+    --radius-bubble: 3rem; /* 48px ultra bubbly */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: 60 9% 8%;
+    --foreground: 255 245 230;
+    --card: 60 9% 10%;
+    --card-foreground: 255 245 230;
+    --popover: 60 9% 10%;
+    --popover-foreground: 255 245 230;
+    --muted: 60 9% 15%;
+    --muted-foreground: 215 16% 70%;
+    --border: 60 9% 15%;
+    --input: 60 9% 15%;
   }
 }
 
@@ -100,6 +99,177 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body;
+    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Fredoka One', cursive;
+    font-weight: 400;
+  }
+}
+
+@layer components {
+  /* Fun card component */
+  .fun-card {
+    @apply bg-card rounded-[var(--radius-fun)] p-6 shadow-[var(--shadow-bubbly)] border border-border/10;
+    background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--accent) / 0.05));
+    transition: var(--transition-bounce);
+  }
+
+  .fun-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: var(--shadow-fun);
+  }
+
+  /* Bubbly button base */
+  .btn-bubbly {
+    @apply rounded-[var(--radius-fun)] px-6 py-3 font-semibold transition-all duration-300;
+    box-shadow: var(--shadow-bubbly);
+  }
+
+  .btn-bubbly:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-fun);
+  }
+
+  .btn-bubbly:active {
+    transform: translateY(0px) scale(0.98);
+  }
+
+  /* Gradient backgrounds */
+  .bg-gradient-fun {
+    background: var(--gradient-fun);
+  }
+
+  .bg-gradient-magical {
+    background: var(--gradient-magical);
+  }
+
+  .bg-gradient-sky {
+    background: var(--gradient-sky);
+  }
+
+  /* Playful input styles */
+  .input-fun {
+    @apply bg-background border-2 border-border rounded-[var(--radius-fun)] px-4 py-3 text-foreground;
+    transition: var(--transition-smooth);
+  }
+
+  .input-fun:focus {
+    @apply border-primary outline-none;
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+  }
+
+  /* Bounce animation for interactive elements */
+  .bounce-hover:hover {
+    animation: bounce-gentle 0.6s ease-in-out;
+  }
+
+  /* Paw trail animation */
+  .paw-trail {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .paw-trail::before {
+    content: '🐾';
+    position: absolute;
+    top: 50%;
+    left: -20px;
+    transform: translateY(-50%);
+    animation: paw-walk 3s linear infinite;
+    opacity: 0.3;
+  }
+
+  /* Floating animation for decorative elements */
+  .float-gentle {
+    animation: float-gentle 3s ease-in-out infinite;
+  }
+
+  /* Shimmer effect for loading states */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--primary) / 0.1),
+      transparent
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+/* Keyframe animations */
+@keyframes bounce-gentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes paw-walk {
+  0% { left: -20px; opacity: 0; }
+  50% { opacity: 0.6; }
+  100% { left: calc(100% + 20px); opacity: 0; }
+}
+
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-10px) rotate(1deg); }
+  66% { transform: translateY(-5px) rotate(-1deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .fun-card:hover,
+  .btn-bubbly:hover,
+  .bounce-hover:hover {
+    transform: none;
+  }
+  
+  .float-gentle,
+  .paw-trail::before {
+    animation: none;
+  }
+}
+
+/* Focus styles for accessibility */
+:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary-glow));
 }
