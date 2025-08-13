@@ -12,6 +12,7 @@ import Login from "@/pages/Login";
 import AuthCallback from "@/pages/AuthCallback";
 import Dashboard from "@/pages/Dashboard";
 import Walkers from "@/pages/Walkers";
+import WalkerProfile from "@/pages/WalkerProfile";
 import Pets from "@/pages/Pets";
 import Schedule from "@/pages/Schedule";
 import Settings from "@/pages/Settings";
@@ -19,6 +20,7 @@ import BookingNew from "@/pages/BookingNew";
 import WalkTracking from "@/pages/WalkTracking";
 import Photos from "@/pages/Photos";
 import Loyalty from "@/pages/Loyalty";
+import Notifications from "@/pages/Notifications";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -90,6 +92,14 @@ const App = () => {
                   }
                 />
                 <Route
+                  path="/walkers/:walkerId"
+                  element={
+                    <ProtectedRoute>
+                      <WalkerProfile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/pets"
                   element={
                     <ProtectedRoute>
@@ -142,6 +152,14 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <Loyalty />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/notifications"
+                  element={
+                    <ProtectedRoute>
+                      <Notifications />
                     </ProtectedRoute>
                   }
                 />

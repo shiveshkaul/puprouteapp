@@ -2,9 +2,11 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { useCreateUserProfile } from '@/hooks/useUserProfile';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
+  const createUserProfile = useCreateUserProfile();
 
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -19,6 +21,14 @@ const AuthCallback = () => {
         }
 
         if (data.session) {
+          // Create user profile if it doesn't exist
+          try {
+            await createUserProfile.mutateAsync({});
+          } catch (profileError) {
+            console.log('Profile creation error (may already exist):', profileError);
+            // Continue anyway - profile might already exist
+          }
+          
           toast.success('Welcome to PupRoute! 🐕');
           navigate('/dashboard');
         } else {
@@ -32,7 +42,7 @@ const AuthCallback = () => {
     };
 
     handleAuthCallback();
-  }, [navigate]);
+  }, [navigate, createUserProfile]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">

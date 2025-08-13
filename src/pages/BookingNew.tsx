@@ -1,23 +1,28 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FaArrowLeft, FaArrowRight, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaPaw, FaCheck } from "react-icons/fa";
+import { FaArrowLeft, FaArrowRight, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaPaw, FaCheck, FaMagic } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { usePets } from "@/hooks/usePets";
 import { useWalkers } from "@/hooks/useWalkers";
 import { useServiceTypes, useCreateBooking } from "@/hooks/useBookings";
+import SmartMatching from "@/components/SmartMatching";
+import WalkerAvailability from "@/components/WalkerAvailability";
 
 const BookingNew = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedPet, setSelectedPet] = useState<string>("");
   const [selectedService, setSelectedService] = useState<string>("");
   const [selectedWalker, setSelectedWalker] = useState<string>("");
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState<Array<{ date: string; timeSlot: any }>>([]);
+  const [walkerSelectionMode, setWalkerSelectionMode] = useState<'browse' | 'smart'>('smart');
   
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -48,8 +53,8 @@ const BookingNew = () => {
   const steps = [
     { number: 1, title: "Select Pet", icon: FaPaw, emoji: "🐕" },
     { number: 2, title: "Service & Time", icon: FaCalendarAlt, emoji: "📅" },
-    { number: 3, title: "Location & Details", icon: FaMapMarkerAlt, emoji: "📍" },
-    { number: 4, title: "Choose Walker", icon: FaPaw, emoji: "👨‍🦱" },
+    { number: 3, title: "Choose Walker", icon: FaMagic, emoji: "✨" },
+    { number: 4, title: "Location & Details", icon: FaMapMarkerAlt, emoji: "�" },
     { number: 5, title: "Review & Confirm", icon: FaCheck, emoji: "✅" }
   ];
 
@@ -80,16 +85,15 @@ const BookingNew = () => {
         return;
       }
 
-      if (!data.scheduled_date || !data.scheduled_time) {
-        toast({
-          title: "Error",
-          description: "Please select date and time",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (!data.pickup_address) {
+        // Validate date and time
+        if (selectedTimeSlots.length === 0 && (!data.scheduled_date || !data.scheduled_time)) {
+          toast({
+            title: "Error",
+            description: "Please select date and time or use smart scheduling",
+            variant: "destructive"
+          });
+          return;
+        }      if (!data.pickup_address) {
         toast({
           title: "Error",
           description: "Please enter pickup address",
@@ -108,31 +112,40 @@ const BookingNew = () => {
         return;
       }
 
-      // Validate date is not in the past
-      const selectedDate = new Date(data.scheduled_date + 'T' + data.scheduled_time);
-      const now = new Date();
-      if (selectedDate <= now) {
-        toast({
-          title: "Error",
-          description: "Cannot schedule a walk in the past",
-          variant: "destructive"
-        });
-        return;
-      }
+        // Use selected time slot if available, otherwise use form data
+        const scheduleData = selectedTimeSlots.length > 0 
+          ? {
+              scheduled_date: selectedTimeSlots[0].date,
+              scheduled_time: selectedTimeSlots[0].timeSlot.start_time,
+            }
+          : {
+              scheduled_date: data.scheduled_date,
+              scheduled_time: data.scheduled_time,
+            };
 
-      await createBookingMutation.mutateAsync({
-        pet_id: selectedPet,
-        walker_id: selectedWalker || null,
-        service_type_id: selectedService,
-        scheduled_date: data.scheduled_date,
-        scheduled_time: data.scheduled_time,
-        duration_minutes: selectedServiceType.duration_minutes,
-        pickup_address: data.pickup_address,
-        base_price: selectedServiceType.base_price,
-        total_amount: selectedServiceType.base_price,
-        special_instructions: data.special_instructions || null,
-        emergency_contact_phone: data.emergency_contact_phone || null,
-      });
+        // Validate date is not in the past
+        const selectedDate = new Date(scheduleData.scheduled_date + 'T' + scheduleData.scheduled_time);
+        const now = new Date();
+        if (selectedDate <= now) {
+          toast({
+            title: "Error",
+            description: "Cannot schedule a walk in the past",
+            variant: "destructive"
+          });
+          return;
+        }      await createBookingMutation.mutateAsync({
+          pet_id: selectedPet,
+          walker_id: selectedWalker || null,
+          service_type_id: selectedService,
+          scheduled_date: scheduleData.scheduled_date,
+          scheduled_time: scheduleData.scheduled_time,
+          duration_minutes: selectedServiceType.duration_minutes,
+          pickup_address: data.pickup_address,
+          base_price: selectedServiceType.base_price,
+          total_amount: selectedServiceType.base_price,
+          special_instructions: data.special_instructions || null,
+          emergency_contact_phone: data.emergency_contact_phone || null,
+        });
 
       toast({
         title: "Booking created successfully! 🎉",
@@ -167,15 +180,15 @@ const BookingNew = () => {
         return selectedPet !== "";
       case 2: 
         return selectedService !== "" && 
-               watch('scheduled_date') && 
-               watch('scheduled_time') &&
+               ((selectedTimeSlots.length > 0) || 
+                (watch('scheduled_date') && watch('scheduled_time'))) &&
                serviceTypes.length > 0;
       case 3: 
+        // Walker selection step - always can proceed
+        return true;
+      case 4: 
         const address = watch('pickup_address');
         return address && address.trim().length > 0;
-      case 4: 
-        // Walker selection is optional - can proceed without selecting one
-        return true;
       case 5: 
         return true;
       default: 
@@ -314,6 +327,106 @@ const BookingNew = () => {
 
       case 3:
         return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-heading text-primary mb-4">Choose your walker ✨</h3>
+            
+            <Tabs value={walkerSelectionMode} onValueChange={(value) => setWalkerSelectionMode(value as 'browse' | 'smart')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="smart" className="flex items-center gap-2">
+                  <FaMagic />
+                  Smart Matching
+                </TabsTrigger>
+                <TabsTrigger value="browse" className="flex items-center gap-2">
+                  <FaPaw />
+                  Browse All
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="smart" className="mt-6">
+                <SmartMatching
+                  selectedPetId={selectedPet}
+                  onWalkerSelect={(walkerId) => {
+                    setSelectedWalker(walkerId);
+                    setValue('walker_id', walkerId);
+                  }}
+                />
+              </TabsContent>
+              
+              <TabsContent value="browse" className="mt-6">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {walkers.slice(0, 6).map((walker) => (
+                      <motion.div
+                        key={walker.id}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          setSelectedWalker(walker.id);
+                          setValue('walker_id', walker.id);
+                        }}
+                        className={`fun-card cursor-pointer transition-all ${
+                          selectedWalker === walker.id
+                            ? "ring-2 ring-primary bg-primary/5"
+                            : "hover:bg-accent/5"
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-full bg-gradient-fun flex items-center justify-center text-white font-semibold">
+                            {walker.users?.first_name?.charAt(0)}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-primary">
+                              {walker.users?.first_name} {walker.users?.last_name}
+                            </h4>
+                            <div className="flex items-center gap-2">
+                              <span className="text-yellow-500">⭐</span>
+                              <span className="text-sm">{walker.average_rating?.toFixed(1) || 'N/A'}</span>
+                              <span className="text-sm text-muted-foreground">
+                                ({walker.total_reviews || 0} reviews)
+                              </span>
+                            </div>
+                            <p className="text-sm text-success font-semibold">${walker.hourly_rate}/hour</p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                  
+                  <div className="text-center">
+                    <Button variant="outline" onClick={() => {
+                      setSelectedWalker("");
+                      setValue('walker_id', null);
+                    }}>
+                      Let PupRoute Choose for Me! 🎲
+                    </Button>
+                  </div>
+
+                  {walkers.length === 0 && (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">No walkers available at the moment. We'll assign one for you!</p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+            
+            {/* Walker Availability Calendar */}
+            {selectedWalker && (
+              <div className="mt-6">
+                <WalkerAvailability
+                  walkerId={selectedWalker}
+                  selectedSlots={selectedTimeSlots}
+                  onSlotSelect={(date, timeSlot) => {
+                    setSelectedTimeSlots([{ date, timeSlot }]);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        );
+
+      case 4:
+        return (
           <div className="space-y-4">
             <h3 className="text-xl font-heading text-primary mb-4">Where should we pick up your pup? 📍</h3>
             
@@ -345,69 +458,21 @@ const BookingNew = () => {
           </div>
         );
 
-      case 4:
-        return (
-          <div className="space-y-4">
-            <h3 className="text-xl font-heading text-primary mb-4">Choose your walker 👨‍🦱</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {walkers.slice(0, 6).map((walker) => (
-                <motion.div
-                  key={walker.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setSelectedWalker(walker.id);
-                    setValue('walker_id', walker.id);
-                  }}
-                  className={`fun-card cursor-pointer transition-all ${
-                    selectedWalker === walker.id
-                      ? "ring-2 ring-primary bg-primary/5"
-                      : "hover:bg-accent/5"
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-fun flex items-center justify-center text-white font-semibold">
-                      {walker.users.first_name.charAt(0)}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-primary">
-                        {walker.users.first_name} {walker.users.last_name}
-                      </h4>
-                      <div className="flex items-center gap-2">
-                        <span className="text-yellow-500">⭐</span>
-                        <span className="text-sm">{walker.average_rating.toFixed(1)}</span>
-                        <span className="text-sm text-muted-foreground">
-                          ({walker.total_reviews} reviews)
-                        </span>
-                      </div>
-                      <p className="text-sm text-success font-semibold">${walker.hourly_rate}/hour</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-            
-            <div className="text-center">
-              <Button variant="outline" onClick={() => {
-                setSelectedWalker("");
-                setValue('walker_id', null);
-              }}>
-                Let PupRoute Choose for Me! 🎲
-              </Button>
-            </div>
-
-            {walkers.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No walkers available at the moment. We'll assign one for you!</p>
-              </div>
-            )}
-          </div>
-        );
-
       case 5:
         const selectedPetData = pets.find(p => p.id === selectedPet);
         const selectedServiceData = serviceTypes.find(s => s.id === selectedService);
         const selectedWalkerData = walkers.find(w => w.id === selectedWalker);
+        
+        // Get schedule data from either time slots or form
+        const scheduleDisplay = selectedTimeSlots.length > 0 
+          ? {
+              date: selectedTimeSlots[0].date,
+              time: selectedTimeSlots[0].timeSlot.start_time + ' - ' + selectedTimeSlots[0].timeSlot.end_time
+            }
+          : {
+              date: watch('scheduled_date'),
+              time: watch('scheduled_time')
+            };
         
         return (
           <div className="space-y-6">
@@ -426,17 +491,17 @@ const BookingNew = () => {
                 </div>
                 <div className="flex justify-between">
                   <span>Date:</span>
-                  <span className="font-semibold">{watch('scheduled_date')}</span>
+                  <span className="font-semibold">{scheduleDisplay.date}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Time:</span>
-                  <span className="font-semibold">{watch('scheduled_time')}</span>
+                  <span className="font-semibold">{scheduleDisplay.time}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Walker:</span>
                   <span className="font-semibold">
                     {selectedWalkerData 
-                      ? `${selectedWalkerData.users.first_name} ${selectedWalkerData.users.last_name}`
+                      ? `${selectedWalkerData.users?.first_name} ${selectedWalkerData.users?.last_name}`
                       : "Auto-assigned by PupRoute"
                     }
                   </span>
@@ -448,7 +513,11 @@ const BookingNew = () => {
                 <hr />
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total:</span>
-                  <span className="text-success">${selectedServiceData?.base_price}</span>
+                  <span className="text-success">
+                    ${selectedTimeSlots.length > 0 
+                      ? selectedTimeSlots[0].timeSlot.price || selectedServiceData?.base_price
+                      : selectedServiceData?.base_price}
+                  </span>
                 </div>
               </div>
             </div>
