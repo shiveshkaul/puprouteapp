@@ -278,28 +278,28 @@ const Schedule = () => {
                     <div className="flex items-center space-x-2">
                       <FaMapMarkerAlt className="text-accent" />
                       <span className="text-sm">
-                        {booking.pickup_location || 'Location TBD'}
+                        {booking.pickup_address || 'Location TBD'}
                       </span>
                     </div>
                   </div>
 
-                  {booking.walkers && (
+                  {booking.walker_profiles && (
                     <div className="flex items-center justify-between p-4 bg-muted/20 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <Avatar className="h-10 w-10">
                           <AvatarFallback>
-                            {booking.walkers.users?.first_name?.charAt(0) || 'W'}
+                            {booking.walker_profiles.user?.first_name?.charAt(0) || 'W'}
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="font-medium">
-                            {booking.walkers.users?.first_name} {booking.walkers.users?.last_name}
+                            {booking.walker_profiles.user?.first_name} {booking.walker_profiles.user?.last_name}
                           </p>
                           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                             <FaStar className="text-yellow-500" />
-                            <span>{booking.walkers.average_rating?.toFixed(1) || 'New'}</span>
+                            <span>{booking.walker_profiles.average_rating?.toFixed(1) || 'New'}</span>
                             <span>•</span>
-                            <span>${booking.walkers.hourly_rate}/hr</span>
+                            <span>${booking.walker_profiles.hourly_rate}/hr</span>
                           </div>
                         </div>
                       </div>

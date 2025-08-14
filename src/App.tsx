@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 
 // Pages
 import Login from "@/pages/Login";
+import WalkerMarketplace from '@/pages/WalkerMarketplace';
 import AuthCallback from "@/pages/AuthCallback";
 import Dashboard from "@/pages/Dashboard";
 import Walkers from "@/pages/Walkers";
@@ -25,6 +26,10 @@ import NotFound from "@/pages/NotFound";
 import { RealAdvancedWalkExperience } from "@/components/RealAdvancedWalkExperience";
 import { LiveWalkExperience } from "@/components/LiveWalkExperience";
 import PremiumWalkExperience from "@/pages/PremiumWalkExperience";
+import { SubscriptionPlans } from "@/components/SubscriptionPlans";
+import WalkerOnboarding from "@/pages/WalkerOnboarding";
+import WalkerDashboard from "@/pages/WalkerDashboard";
+import MarketplaceDashboard from "@/pages/MarketplaceDashboard";
 
 const queryClient = new QueryClient();
 
@@ -74,9 +79,19 @@ const App = () => {
                 {/* Public Routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/walker-onboarding" element={<WalkerOnboarding />} />
+                <Route path="/walker-dashboard" element={<WalkerDashboard />} />
                 
                 {/* Protected Routes */}
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route
+                  path="/marketplace"
+                  element={
+                    <ProtectedRoute>
+                      <WalkerMarketplace />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/dashboard"
                   element={
@@ -170,6 +185,14 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <PremiumWalkExperience />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/subscription"
+                  element={
+                    <ProtectedRoute>
+                      <SubscriptionPlans />
                     </ProtectedRoute>
                   }
                 />

@@ -17,7 +17,8 @@ import {
   FaBars,
   FaTimes,
   FaUsers,
-  FaStar
+  FaStar,
+  FaStore
 } from 'react-icons/fa';
 
 interface SidebarLayoutProps {
@@ -37,6 +38,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       path: '/dashboard',
       icon: FaHome,
       description: 'Overview & stats'
+    },
+    {
+      name: 'Marketplace',
+      path: '/marketplace',
+      icon: FaStore,
+      description: 'Find walkers nearby'
     },
     {
       name: 'Bookings',
@@ -91,6 +98,15 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     }
   ];
 
+  const earnItems = [
+    {
+      name: 'Become a Walker & Earn',
+      path: '/walker-onboarding',
+      icon: FaStar,
+      description: 'Start earning with pets!'
+    }
+  ];
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Mobile Sidebar Overlay */}
@@ -106,10 +122,10 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         fixed lg:static inset-y-0 left-0 z-50 w-72 bg-white shadow-xl 
         transform transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:block
+        lg:translate-x-0 lg:block flex flex-col h-screen
       `}>
         {/* Logo & Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <Link to="/dashboard" className="flex items-center gap-3">
             <div className="w-12 h-12 flex items-center justify-center">
               <img src={logoPup} alt="PupRoute Logo" className="w-10 h-10 object-contain" />
@@ -129,8 +145,8 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
           </Button>
         </div>
 
-        {/* Navigation Items */}
-        <nav className="flex-1 px-4 py-6 space-y-4">
+        {/* Navigation Items - Scrollable */}
+        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
           <div className="space-y-2">
             {navigationItems.map((item) => {
               const Icon = item.icon;
@@ -208,11 +224,39 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
               );
             })}
           </div>
+
+          {/* Earn Money Section */}
+          <div className="pt-6 space-y-2">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 px-6">
+              💰 EARN MONEY
+            </h3>
+            {earnItems.map((item) => {
+              const Icon = item.icon;
+              
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className="group flex items-center gap-4 px-6 py-4 rounded-xl bg-gradient-to-r from-green-400 to-blue-500 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <Icon className="text-lg text-white" />
+                  <div className="flex-1">
+                    <div className="font-semibold">{item.name}</div>
+                    <div className="text-xs text-green-100">
+                      {item.description}
+                    </div>
+                  </div>
+                  <span className="text-xl">💸</span>
+                </Link>
+              );
+            })}
+          </div>
         </nav>
 
         {/* User Profile */}
         {user && (
-          <div className="border-t border-gray-200 p-4">
+          <div className="border-t border-gray-200 p-4 flex-shrink-0">
             <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-gray-50">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={user.user_metadata?.avatar_url} />
@@ -242,9 +286,9 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
         {/* Mobile Header */}
-        <div className="lg:hidden bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+        <div className="lg:hidden bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
           <Button
             variant="ghost"
             size="sm"
@@ -258,8 +302,10 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         </div>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto">
-          {children}
+        <main className="flex-1 overflow-y-auto bg-gray-50">
+          <div className="h-full">
+            {children}
+          </div>
         </main>
       </div>
     </div>

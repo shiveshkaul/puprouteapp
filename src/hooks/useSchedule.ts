@@ -19,22 +19,41 @@ export const useSchedule = () => {
             avatar_url,
             pet_breeds (name)
           ),
-          walkers (
-            users (first_name, last_name),
+          walker_profiles!inner (
             hourly_rate,
-            average_rating
+            average_rating,
+            user_id
           ),
           service_types (
             name,
             duration_minutes
           )
         `)
-        .eq('owner_id', user.id)
+        .eq('customer_id', user.id)
         .order('scheduled_date', { ascending: true })
         .order('scheduled_time', { ascending: true });
 
       if (error) throw error;
-      return data || [];
+      
+      // Get walker user details separately to avoid complex join issues
+      const walkerIds = [...new Set(data?.map(booking => booking.walker_profiles?.user_id).filter(Boolean))];
+      const { data: walkerUsers, error: walkerError } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, avatar_url')
+        .in('id', walkerIds);
+
+      if (walkerError) throw walkerError;
+
+      // Merge walker user data
+      const enrichedData = data?.map(booking => ({
+        ...booking,
+        walker_profiles: booking.walker_profiles ? {
+          ...booking.walker_profiles,
+          user: walkerUsers?.find(user => user.id === booking.walker_profiles?.user_id)
+        } : null
+      }));
+
+      return enrichedData || [];
     },
     enabled: !!user,
   });
@@ -59,17 +78,17 @@ export const useUpcomingBookings = () => {
             avatar_url,
             pet_breeds (name)
           ),
-          walkers (
-            users (first_name, last_name),
+          walker_profiles!inner (
             hourly_rate,
-            average_rating
+            average_rating,
+            user_id
           ),
           service_types (
             name,
             duration_minutes
           )
         `)
-        .eq('owner_id', user.id)
+        .eq('customer_id', user.id)
         .gte('scheduled_date', today)
         .in('status', ['pending', 'confirmed', 'in_progress'])
         .order('scheduled_date', { ascending: true })
@@ -77,7 +96,26 @@ export const useUpcomingBookings = () => {
         .limit(5);
 
       if (error) throw error;
-      return data || [];
+      
+      // Get walker user details separately to avoid complex join issues
+      const walkerIds = [...new Set(data?.map(booking => booking.walker_profiles?.user_id).filter(Boolean))];
+      const { data: walkerUsers, error: walkerError } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, avatar_url')
+        .in('id', walkerIds);
+
+      if (walkerError) throw walkerError;
+
+      // Merge walker user data
+      const enrichedData = data?.map(booking => ({
+        ...booking,
+        walker_profiles: booking.walker_profiles ? {
+          ...booking.walker_profiles,
+          user: walkerUsers?.find(user => user.id === booking.walker_profiles?.user_id)
+        } : null
+      }));
+
+      return enrichedData || [];
     },
     enabled: !!user,
   });
@@ -93,7 +131,7 @@ export const useUpdateBookingStatus = () => {
         .from('bookings')
         .update({ status })
         .eq('id', bookingId)
-        .eq('owner_id', user?.id)
+        .eq('customer_id', user?.id)
         .select()
         .single();
 
@@ -121,7 +159,7 @@ export const useCancelBooking = () => {
           cancelled_at: new Date().toISOString()
         })
         .eq('id', bookingId)
-        .eq('owner_id', user?.id)
+        .eq('customer_id', user?.id)
         .select()
         .single();
 
@@ -153,7 +191,7 @@ export const useBookingStats = () => {
       const { data, error } = await supabase
         .from('bookings')
         .select('status, total_amount, pet_id, service_types!inner(duration_minutes)')
-        .eq('owner_id', user.id)
+        .eq('customer_id', user.id)
         .gte('scheduled_date', startOfWeek.toISOString().split('T')[0])
         .lte('scheduled_date', endOfWeek.toISOString().split('T')[0]);
 

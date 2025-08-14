@@ -25,6 +25,9 @@ const Pets = () => {
   
   const { register, handleSubmit, reset, setValue, watch } = useForm();
 
+  // In hybrid model, pets are always unlimited for owners
+  const canAddPet = true;
+
   const filteredPets = pets.filter(pet =>
     pet.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (pet.pet_breeds?.name || pet.custom_breed || '').toLowerCase().includes(searchQuery.toLowerCase())
@@ -150,7 +153,12 @@ const Pets = () => {
           {/* Add Pet Button */}
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="magical" size="lg" className="flex items-center gap-2">
+              <Button 
+                variant="magical" 
+                size="lg" 
+                className="flex items-center gap-2"
+                onClick={() => setIsAddDialogOpen(true)}
+              >
                 <FaPlus />
                 Add New Pet 🐕
               </Button>
@@ -401,7 +409,11 @@ const Pets = () => {
               }
             </p>
             {!searchQuery && (
-              <Button variant="magical" size="lg" onClick={() => setIsAddDialogOpen(true)}>
+              <Button 
+                variant="magical" 
+                size="lg" 
+                onClick={() => setIsAddDialogOpen(true)}
+              >
                 <FaPlus className="mr-2" />
                 Add Your First Pet 🎉
               </Button>

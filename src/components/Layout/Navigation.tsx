@@ -15,7 +15,8 @@ import {
   FaPlay,
   FaPause,
   FaRoute,
-  FaClock
+  FaClock,
+  FaStore
 } from 'react-icons/fa';
 
 const Navigation: React.FC = () => {
@@ -90,6 +91,18 @@ const Navigation: React.FC = () => {
             >
               <FaHome />
               Dashboard
+            </Link>
+
+            <Link
+              to="/marketplace"
+              className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive('/marketplace')
+                  ? 'bg-green-100 text-green-700'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <FaStore />
+              Marketplace
             </Link>
             
             <Link
@@ -173,6 +186,16 @@ const Navigation: React.FC = () => {
             >
               <FaHome />
               Dashboard
+            </Link>
+
+            <Link
+              to="/marketplace"
+              className={`flex flex-col items-center gap-1 px-3 py-2 text-xs ${
+                isActive('/marketplace') ? 'text-green-700' : 'text-gray-600'
+              }`}
+            >
+              <FaStore />
+              Marketplace
             </Link>
             
             <Link

@@ -200,35 +200,35 @@ const BookingDetailsModal = ({ bookingId, isOpen, onClose }: BookingDetailsModal
             </TabsContent>
 
             <TabsContent value="walker" className="space-y-6">
-              {booking?.walkers ? (
+              {booking?.walker_profiles ? (
                 <Card className="p-6">
                   <div className="flex items-start gap-4 mb-6">
                     <Avatar className="h-16 w-16">
-                      <AvatarImage src={booking.walkers.users?.avatar_url} />
+                      <AvatarImage src={booking.walker_profiles.user?.avatar_url} />
                       <AvatarFallback className="text-xl">
-                        {booking.walkers.users?.first_name?.charAt(0)}
+                        {booking.walker_profiles.user?.first_name?.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <h3 className="text-xl font-semibold">
-                        {booking.walkers.users?.first_name} {booking.walkers.users?.last_name}
+                        {booking.walker_profiles.user?.first_name} {booking.walker_profiles.user?.last_name}
                       </h3>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="flex items-center gap-1">
                           <FaStar className="text-yellow-500" />
-                          <span className="font-medium">{booking.walkers.average_rating?.toFixed(1)}</span>
+                          <span className="font-medium">{booking.walker_profiles.average_rating?.toFixed(1)}</span>
                         </div>
                         <span className="text-muted-foreground">•</span>
-                        <span className="text-muted-foreground">${booking.walkers.hourly_rate}/hr</span>
-                        {booking.walkers.experience_years && (
+                        <span className="text-muted-foreground">${booking.walker_profiles.hourly_rate}/hr</span>
+                        {booking.walker_profiles.experience_years && (
                           <>
                             <span className="text-muted-foreground">•</span>
-                            <span className="text-muted-foreground">{booking.walkers.experience_years}+ years exp</span>
+                            <span className="text-muted-foreground">{booking.walker_profiles.experience_years}+ years exp</span>
                           </>
                         )}
                       </div>
-                      {booking.walkers.bio && (
-                        <p className="text-muted-foreground text-sm">{booking.walkers.bio}</p>
+                      {booking.walker_profiles.bio && (
+                        <p className="text-muted-foreground text-sm">{booking.walker_profiles.bio}</p>
                       )}
                     </div>
                   </div>
@@ -244,11 +244,11 @@ const BookingDetailsModal = ({ bookingId, isOpen, onClose }: BookingDetailsModal
                     </Button>
                   </div>
 
-                  {booking.walkers.certifications && (
+                  {booking.walker_profiles.certifications && (
                     <div className="mt-4 p-3 bg-secondary/20 rounded-lg">
                       <p className="text-sm font-medium mb-2">Certifications:</p>
                       <div className="flex flex-wrap gap-2">
-                        {booking.walkers.certifications.map((cert, index) => (
+                        {booking.walker_profiles.certifications.map((cert, index) => (
                           <Badge key={index} variant="secondary" className="text-xs">
                             {cert}
                           </Badge>

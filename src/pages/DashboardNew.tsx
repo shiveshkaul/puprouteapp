@@ -262,8 +262,8 @@ const Dashboard = () => {
                         </h4>
                         <p className="text-sm text-muted-foreground flex items-center gap-1">
                           <span>👤</span>
-                          {booking.walkers?.users 
-                            ? `${booking.walkers.users.first_name} ${booking.walkers.users.last_name}`
+                          {booking.walker_profiles?.user 
+                            ? `${booking.walker_profiles.user.first_name} ${booking.walker_profiles.user.last_name}`
                             : "Walker Pending"
                           }
                         </p>

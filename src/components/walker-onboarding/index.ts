@@ -1,0 +1,13 @@
+export { WelcomeStep } from './WelcomeStep';
+export { BasicInfoStep } from './BasicInfoStep';
+export { AddressStep } from './AddressStep';
+export { ContactStep } from './ContactStep';
+export { ExperienceStep } from './ExperienceStep';
+export { AvailabilityStep } from './AvailabilityStep';
+export { RatesStep } from './RatesStep';
+export { PhotosStep } from './PhotosStep';
+export { TestimonialsStep } from './TestimonialsStep';
+export { VerificationStep } from './VerificationStep';
+export { SafetyQuizStep } from './SafetyQuizStep';
+export { ReviewStep } from './ReviewStep';
+export { SuccessStep } from './SuccessStep';

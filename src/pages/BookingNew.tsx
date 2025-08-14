@@ -34,6 +34,9 @@ const BookingNew = () => {
   const { data: serviceTypes = [] } = useServiceTypes();
   const createBookingMutation = useCreateBooking();
 
+  // In hybrid model, booking is always free for owners
+  const canBookWalk = true;
+
   // Pre-select pet and walker from URL params
   useEffect(() => {
     const petId = searchParams.get('pet');
@@ -141,8 +144,8 @@ const BookingNew = () => {
           scheduled_time: scheduleData.scheduled_time,
           duration_minutes: selectedServiceType.duration_minutes,
           pickup_address: data.pickup_address,
-          base_price: selectedServiceType.base_price,
-          total_amount: selectedServiceType.base_price,
+          base_price: 0, // FREE for owners - walkers pay commission
+          total_amount: 0, // No charge to pet owners
           special_instructions: data.special_instructions || null,
           emergency_contact_phone: data.emergency_contact_phone || null,
         });
@@ -260,6 +263,11 @@ const BookingNew = () => {
             {/* Service Type Selection */}
             <div>
               <Label className="text-base font-semibold">Service Type</Label>
+              <div className="mb-3 p-3 bg-success/10 border border-success/20 rounded-lg">
+                <p className="text-sm text-success-foreground flex items-center gap-2">
+                  ✨ <strong>All services are FREE for pet owners!</strong> Better than Rover - no booking fees ever.
+                </p>
+              </div>
               {serviceTypes.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">Loading service types...</p>
@@ -285,7 +293,7 @@ const BookingNew = () => {
                         <h4 className="font-semibold text-primary">{service.name}</h4>
                         <p className="text-sm text-muted-foreground">{service.description}</p>
                         <div className="mt-2">
-                          <span className="text-lg font-bold text-success">${service.base_price}</span>
+                          <span className="text-lg font-bold text-success">FREE</span>
                           <span className="text-sm text-muted-foreground"> ({service.duration_minutes} min)</span>
                         </div>
                       </div>
@@ -513,11 +521,7 @@ const BookingNew = () => {
                 <hr />
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total:</span>
-                  <span className="text-success">
-                    ${selectedTimeSlots.length > 0 
-                      ? selectedTimeSlots[0].timeSlot.price || selectedServiceData?.base_price
-                      : selectedServiceData?.base_price}
-                  </span>
+                  <span className="text-success">FREE</span>
                 </div>
               </div>
             </div>

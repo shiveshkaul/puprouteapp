@@ -782,6 +782,44 @@ export interface Database {
           updated_at: string | null
         }
       }
+      user_subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          plan_id: 'free' | 'plus' | 'pro' | 'elite'
+          status: 'active' | 'cancelled' | 'expired'
+          current_period_start: string
+          current_period_end: string
+          stripe_subscription_id: string | null
+          stripe_customer_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          plan_id: 'free' | 'plus' | 'pro' | 'elite'
+          status?: 'active' | 'cancelled' | 'expired'
+          current_period_start?: string
+          current_period_end: string
+          stripe_subscription_id?: string | null
+          stripe_customer_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          plan_id?: 'free' | 'plus' | 'pro' | 'elite'
+          status?: 'active' | 'cancelled' | 'expired'
+          current_period_start?: string
+          current_period_end?: string
+          stripe_subscription_id?: string | null
+          stripe_customer_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Functions: {
       calculate_distance: {
