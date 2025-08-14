@@ -1,6 +1,9 @@
 // Re-export database types
 export * from './database';
 
+// Re-export settings types
+export * from './settings';
+
 // Walker onboarding types
 export interface WalkerData {
   firstName: string;

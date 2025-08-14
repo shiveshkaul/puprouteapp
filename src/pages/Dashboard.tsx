@@ -45,7 +45,26 @@ const Dashboard = () => {
     else setGreeting("Good Evening");
   }, []);
 
-  const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || "Friend";
+  // Get user's display name (same logic as Settings page)
+  const getUserDisplayName = () => {
+    if (!user) return "Friend";
+    
+    const userMetadata = user.user_metadata || {};
+    
+    // Try to get full name from metadata
+    const fullName = userMetadata.full_name || 
+                     `${userMetadata.first_name || ''} ${userMetadata.last_name || ''}`.trim();
+    
+    // If we have a full name, use it
+    if (fullName && fullName !== ' ') {
+      return fullName;
+    }
+    
+    // Otherwise, use the part before @ in email as a fallback
+    return user.email?.split('@')[0] || "Friend";
+  };
+
+  const displayName = getUserDisplayName();
 
   const dashboardStats = [
     { 
@@ -104,7 +123,7 @@ const Dashboard = () => {
           className="mb-8"
         >
           <h1 className="text-4xl font-heading text-primary mb-2">
-            {greeting}, {firstName}! 👋
+            {greeting}, {displayName}! 👋
           </h1>
           <p className="text-lg text-muted-foreground">
             Ready for some pawsome adventures today?

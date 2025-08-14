@@ -1,43 +1,102 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { FaUser, FaBell, FaCreditCard, FaPalette, FaLock, FaQuestionCircle, FaSignOutAlt, FaToggleOn, FaToggleOff } from "react-icons/fa";
+import { FaUser, FaBell, FaCreditCard, FaPalette, FaLock, FaQuestionCircle, FaSignOutAlt, FaToggleOn, FaToggleOff, FaPlus, FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { 
+  useUserSettings, 
+  useUpdateUserSettings, 
+  useSettingsProfile, 
+  useUpdateUserProfile,
+  usePaymentMethods, 
+  useBillingHistory,
+  useAddPaymentMethod,
+  useToggleNotification,
+  formatPaymentMethodsForDisplay,
+  formatBillingTransactionsForDisplay
+} from "@/hooks/useSettings";
+import { BillingHistoryModal } from "@/components/BillingHistoryModal";
+import { EditProfileModal } from "@/components/EditProfileModal";
+import { AddPaymentMethodModal } from "@/components/AddPaymentMethodModal";
 
 const Settings = () => {
-  const [notifications, setNotifications] = useState({
-    walkReminders: true,
-    walkerUpdates: true,
-    photoSharing: true,
-    promotions: false,
-    weeklyReports: true
-  });
-
-  const [profile, setProfile] = useState({
-    name: "Emma Johnson",
-    email: "emma@example.com",
-    phone: "+1 (555) 123-4567",
-    location: "New York, NY"
-  });
-
-  const toggleNotification = (key: keyof typeof notifications) => {
-    setNotifications(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-    toast.success("Notification settings updated! 🔔");
+  const { user, signOut } = useAuth();
+  const [showBillingHistory, setShowBillingHistory] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showAddPayment, setShowAddPayment] = useState(false);
+  
+  // Data hooks
+  const { data: settings, isLoading: settingsLoading } = useUserSettings();
+  const { data: profile, isLoading: profileLoading } = useSettingsProfile();
+  const { data: paymentMethods, isLoading: paymentsLoading } = usePaymentMethods();
+  const { data: billingHistory, isLoading: billingLoading } = useBillingHistory(10);
+  
+  // Action hooks
+  const toggleNotification = useToggleNotification();
+  const updateProfile = useUpdateUserProfile();
+  const addPaymentMethod = useAddPaymentMethod();
+  
+  // Handle profile save
+  const handleProfileSave = async (profileData: any) => {
+    await updateProfile.mutateAsync(profileData);
   };
-
+  
+  // Handle payment method save
+  const handlePaymentMethodSave = async (paymentData: any) => {
+    await addPaymentMethod.mutateAsync(paymentData);
+  };
+  
+  // Loading state
+  const isLoading = settingsLoading || profileLoading;
+  
+  // Handle sign out
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success("Signed out successfully! 👋");
+    } catch (error) {
+      toast.error("Failed to sign out. Please try again.");
+    }
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-accent/10 pt-20 pb-24 md:pl-64">
+        <div className="container mx-auto px-4 py-6 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-primary"></div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!user || !settings || !profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-accent/10 pt-20 pb-24 md:pl-64">
+        <div className="container mx-auto px-4 py-6">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Settings Unavailable</h1>
+            <p className="text-gray-600">Please sign in to access your settings.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Format payment methods for display
+  const formattedPaymentMethods = paymentMethods ? formatPaymentMethodsForDisplay(paymentMethods) : [];
+  const formattedBilling = billingHistory ? formatBillingTransactionsForDisplay(billingHistory) : [];
+  
   const settingSections = [
     {
       icon: FaUser,
       title: "Profile",
       description: "Manage your personal information",
       items: [
-        { label: "Name", value: profile.name, action: "edit" },
-        { label: "Email", value: profile.email, action: "edit" },
-        { label: "Phone", value: profile.phone, action: "edit" },
-        { label: "Location", value: profile.location, action: "edit" }
+        { label: "Name", value: profile.name, action: "edit", field: "name" },
+        { label: "Email", value: profile.email, action: "edit", field: "email" },
+        { label: "Phone", value: profile.phone || "Not provided", action: "edit", field: "phone" },
+        { label: "Location", value: profile.location || "Not provided", action: "edit", field: "location" }
       ]
     },
     {
@@ -47,33 +106,33 @@ const Settings = () => {
       items: [
         { 
           label: "Walk Reminders", 
-          value: notifications.walkReminders, 
+          value: settings.walk_reminders, 
           action: "toggle",
-          key: "walkReminders" as keyof typeof notifications
+          key: "walk_reminders" as keyof typeof settings
         },
         { 
           label: "Walker Updates", 
-          value: notifications.walkerUpdates, 
+          value: settings.walker_updates, 
           action: "toggle",
-          key: "walkerUpdates" as keyof typeof notifications
+          key: "walker_updates" as keyof typeof settings
         },
         { 
           label: "Photo Sharing", 
-          value: notifications.photoSharing, 
+          value: settings.photo_sharing, 
           action: "toggle",
-          key: "photoSharing" as keyof typeof notifications
+          key: "photo_sharing" as keyof typeof settings
         },
         { 
           label: "Promotions", 
-          value: notifications.promotions, 
+          value: settings.promotions, 
           action: "toggle",
-          key: "promotions" as keyof typeof notifications
+          key: "promotions" as keyof typeof settings
         },
         { 
           label: "Weekly Reports", 
-          value: notifications.weeklyReports, 
+          value: settings.weekly_reports, 
           action: "toggle",
-          key: "weeklyReports" as keyof typeof notifications
+          key: "weekly_reports" as keyof typeof settings
         }
       ]
     },
@@ -82,9 +141,14 @@ const Settings = () => {
       title: "Payment Methods",
       description: "Manage your payment options",
       items: [
-        { label: "Primary Card", value: "**** **** **** 1234", action: "edit" },
-        { label: "Add New Card", value: "", action: "add" },
-        { label: "Billing History", value: "", action: "view" }
+        ...formattedPaymentMethods.map(method => ({
+          label: method.nickname || method.display_name,
+          value: method.is_primary ? "Primary" : method.expires ? `Expires ${method.expires}` : "",
+          action: "edit" as const,
+          id: method.id
+        })),
+        { label: "Add New Card", value: "", action: "add" as const },
+        { label: "Billing History", value: "", action: "view" as const }
       ]
     }
   ];
@@ -135,13 +199,21 @@ const Settings = () => {
           className="fun-card mb-6 bg-gradient-fun text-white"
         >
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-2xl">
-              👤
+            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-2xl overflow-hidden">
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                "👤"
+              )}
             </div>
             <div>
               <h3 className="text-xl font-heading">{profile.name}</h3>
               <p className="opacity-90">{profile.email}</p>
-              <p className="text-sm opacity-75">Member since January 2024 • 🌟 Premium</p>
+              <p className="text-sm opacity-75">
+                Member since {profile.member_since} • 
+                {profile.subscription_tier === 'premium' ? ' 🌟 Premium' : 
+                 profile.subscription_tier === 'pro' ? ' 💎 Pro' : ' Free'}
+              </p>
             </div>
           </div>
         </motion.div>
@@ -194,18 +266,49 @@ const Settings = () => {
                           )}
                         </motion.button>
                       )}
-                      {item.action === "edit" && (
-                        <Button variant="outline" size="sm">
+                      {item.action === "edit" && section.title === "Profile" && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setShowEditProfile(true)}
+                        >
+                          <FaEdit className="mr-1" />
+                          Edit
+                        </Button>
+                      )}
+                      {item.action === "edit" && section.title !== "Profile" && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => toast.info(`Edit ${item.label} feature coming soon! ✏️`)}
+                        >
+                          <FaEdit className="mr-1" />
                           Edit
                         </Button>
                       )}
                       {item.action === "add" && (
-                        <Button variant="success" size="sm">
+                        <Button 
+                          variant="success" 
+                          size="sm"
+                          onClick={() => setShowAddPayment(true)}
+                        >
+                          <FaPlus className="mr-1" />
                           Add
                         </Button>
                       )}
-                      {item.action === "view" && (
+                      {item.action === "view" && section.title === "Payment Methods" && (
+                        <Button 
+                          variant="info" 
+                          size="sm"
+                          onClick={() => setShowBillingHistory(true)}
+                        >
+                          <FaEye className="mr-1" />
+                          View
+                        </Button>
+                      )}
+                      {item.action === "view" && section.title !== "Payment Methods" && (
                         <Button variant="info" size="sm">
+                          <FaEye className="mr-1" />
                           View
                         </Button>
                       )}
@@ -264,7 +367,7 @@ const Settings = () => {
             variant="destructive"
             size="lg"
             className="flex items-center gap-2 sm:ml-auto"
-            onClick={() => toast.error("Signed out successfully 👋")}
+            onClick={handleSignOut}
           >
             <FaSignOutAlt />
             Sign Out
@@ -288,6 +391,28 @@ const Settings = () => {
           </p>
         </motion.div>
       </div>
+      
+      {/* Billing History Modal */}
+      <BillingHistoryModal
+        isOpen={showBillingHistory}
+        onClose={() => setShowBillingHistory(false)}
+        transactions={formattedBilling}
+      />
+      
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        isOpen={showEditProfile}
+        onClose={() => setShowEditProfile(false)}
+        profile={profile}
+        onSave={handleProfileSave}
+      />
+      
+      {/* Add Payment Method Modal */}
+      <AddPaymentMethodModal
+        isOpen={showAddPayment}
+        onClose={() => setShowAddPayment(false)}
+        onSave={handlePaymentMethodSave}
+      />
     </div>
   );
 };
