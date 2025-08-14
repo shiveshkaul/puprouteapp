@@ -420,19 +420,13 @@ export const useWalkerMatchingScore = (walkerId: string, petId?: string) => {
       if (petId && walker?.walker_specialties) {
         const { data: pet } = await supabase
           .from('pets')
-          .select(`
-            id,
-            pet_breeds!inner (
-              size_category
-            )
-          `)
+          .select('pet_breeds!inner(size_category)')
           .eq('id', petId)
           .single();
 
         const hasMatchingSpecialty = walker.walker_specialties.some(spec => {
           const specialty = spec.specialty_types?.name?.toLowerCase();
-          const petBreed = pet?.pet_breeds as any;
-          const petSize = petBreed?.size_category?.toLowerCase();
+          const petSize = (pet?.pet_breeds as any)?.size_category?.toLowerCase();
           
           return specialty?.includes(petSize || '') || 
                  specialty?.includes('all') ||

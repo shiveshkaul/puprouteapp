@@ -1,202 +1,213 @@
-import { motion } from "framer-motion";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { FaHome, FaCalendarAlt, FaPaw, FaUser, FaSearch, FaSignOutAlt } from "react-icons/fa";
-import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
-import logoPup from "@/assets/logo-pup.png";
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/useAuth';
+import { useAdvancedWalkSession } from '@/hooks/useAdvancedWalkSession';
+import { 
+  FaHome, 
+  FaDog, 
+  FaCalendarAlt, 
+  FaBell, 
+  FaCog, 
+  FaUser,
+  FaSignOutAlt,
+  FaPlay,
+  FaPause,
+  FaRoute,
+  FaClock
+} from 'react-icons/fa';
 
-const Navigation = () => {
+const Navigation: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { state, start, current, stats, walkDuration } = useAdvancedWalkSession();
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast.success("See you later! 👋");
-      navigate("/login");
-    } catch (error) {
-      toast.error("Error signing out");
-    }
+  const formatTime = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const navItems = [
-    { icon: FaHome, label: "Home", path: "/dashboard" },
-    { icon: FaCalendarAlt, label: "Bookings", path: "/schedule" },
-    { icon: FaPaw, label: "Pets", path: "/pets" },
-    { icon: FaUser, label: "Profile", path: "/settings" },
-  ];
+  const formatDistance = (meters: number) => {
+    if (meters < 1000) return `${Math.round(meters)}m`;
+    return `${(meters / 1000).toFixed(2)}km`;
+  };
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
-    <>
-      {/* Top Navigation Bar */}
-      <motion.header
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-border shadow-sm"
-      >
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+    <nav className="bg-white shadow-sm border-b sticky top-0 z-40">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2"
-          >
-            <img src={logoPup} alt="PupRoute Logo" className="w-10 h-10" />
-            <h1 className="text-xl font-heading text-primary">PupRoute</h1>
-          </motion.div>
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/src/assets/logo-pup.png" alt="PupRoute" className="h-8 w-8" />
+            <span className="font-bold text-xl text-blue-600">PupRoute</span>
+          </Link>
 
-          {/* Search Bar */}
-          <div className="hidden md:flex flex-1 max-w-md mx-4">
-            <div className="relative w-full">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Find walkers near me..."
-                className="input-fun w-full pl-10 pr-4"
-                aria-label="Search for dog walkers"
-              />
-            </div>
-          </div>
-
-          {/* User Avatar & Menu */}
-          <div className="flex items-center gap-2">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="w-10 h-10 rounded-full bg-gradient-fun flex items-center justify-center text-white font-semibold"
-              title={user?.email || "User"}
-            >
-              {user?.email?.charAt(0).toUpperCase() || "U"}
-            </motion.div>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleSignOut}
-              className="p-2 rounded-full hover:bg-destructive/10 text-destructive transition-colors"
-              title="Sign Out"
-            >
-              <FaSignOutAlt className="w-4 h-4" />
-            </motion.button>
-          </div>
-        </div>
-      </motion.header>
-
-      {/* Bottom Navigation (Mobile) */}
-      <motion.nav
-        initial={{ y: 100 }}
-        animate={{ y: 0 }}
-        className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-border md:hidden"
-      >
-        <div className="flex items-center justify-around py-2">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  "flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-300",
-                  isActive
-                    ? "text-primary bg-primary/10"
-                    : "text-muted-foreground hover:text-primary"
+          {/* Active Walk Status */}
+          {state !== 'idle' && (
+            <div className="flex items-center gap-4 bg-blue-50 px-4 py-2 rounded-lg">
+              <Badge variant={state === 'running' ? 'default' : 'secondary'}>
+                {state === 'running' && (
+                  <>
+                    <FaPlay className="mr-1 text-xs" />
+                    LIVE WALK
+                  </>
                 )}
-              >
-                <motion.div
-                  whileTap={{ scale: 0.9 }}
-                  whileHover={{ scale: 1.1 }}
-                  className={cn(
-                    "p-2 rounded-full transition-all duration-300",
-                    isActive && "bg-primary text-white shadow-[var(--shadow-fun)]"
-                  )}
-                >
-                  <item.icon className="w-5 h-5" />
-                </motion.div>
-                <span className="text-xs font-medium">{item.label}</span>
-              </NavLink>
-            );
-          })}
-        </div>
-      </motion.nav>
-
-      {/* Desktop Sidebar */}
-      <motion.nav
-        initial={{ x: -100 }}
-        animate={{ x: 0 }}
-        className="hidden md:flex fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-border z-40 flex-col p-4"
-      >
-        <div className="space-y-2">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  "flex items-center gap-3 p-3 rounded-[var(--radius-fun)] transition-all duration-300",
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-[var(--shadow-fun)]"
-                    : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                {state === 'paused' && (
+                  <>
+                    <FaPause className="mr-1 text-xs" />
+                    PAUSED
+                  </>
                 )}
-              >
-                <motion.div
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <item.icon className="w-5 h-5" />
-                </motion.div>
-                <span className="font-semibold">{item.label}</span>
-              </NavLink>
-            );
-          })}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mt-8 space-y-3">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-            Quick Actions
-          </h3>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate("/bookings/new")}
-            className="w-full p-3 bg-gradient-fun text-white rounded-[var(--radius-fun)] font-semibold shadow-[var(--shadow-fun)] hover:shadow-[var(--shadow-glow)] transition-all duration-300"
-          >
-            Book a Walk 🚶‍♂️
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate("/pets")}
-            className="w-full p-3 bg-gradient-magical text-white rounded-[var(--radius-fun)] font-semibold shadow-[var(--shadow-fun)] hover:shadow-[var(--shadow-glow)] transition-all duration-300"
-          >
-            Add New Pet 🐕
-          </motion.button>
-        </div>
-
-        {/* User Info & Sign Out */}
-        <div className="mt-auto pt-4 border-t border-border">
-          <div className="flex items-center gap-3 p-3 rounded-[var(--radius-fun)] bg-muted/50">
-            <div className="w-10 h-10 rounded-full bg-gradient-fun flex items-center justify-center text-white font-semibold">
-              {user?.email?.charAt(0).toUpperCase() || "U"}
+                {state === 'ended' && '✅ COMPLETED'}
+              </Badge>
+              <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-1">
+                  <FaClock className="text-blue-500" />
+                  <span className="font-medium">{formatTime(walkDuration)}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <FaRoute className="text-green-500" />
+                  <span className="font-medium">{formatDistance(stats.distanceM)}</span>
+                </div>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">{user?.email}</p>
-              <p className="text-xs text-muted-foreground">Pet Parent</p>
-            </div>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleSignOut}
-              className="p-2 rounded-full hover:bg-destructive/10 text-destructive transition-colors"
-              title="Sign Out"
+          )}
+
+          {/* Main Navigation */}
+          <div className="hidden md:flex items-center gap-6">
+            <Link
+              to="/dashboard"
+              className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive('/dashboard')
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
             >
-              <FaSignOutAlt className="w-4 h-4" />
-            </motion.button>
+              <FaHome />
+              Dashboard
+            </Link>
+            
+            <Link
+              to="/pets"
+              className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive('/pets')
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <FaDog />
+              Pets
+            </Link>
+            
+            <Link
+              to="/schedule"
+              className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive('/schedule')
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <FaCalendarAlt />
+              Schedule
+            </Link>
+            
+            <Link
+              to="/notifications"
+              className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive('/notifications')
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <FaBell />
+              Notifications
+            </Link>
+          </div>
+
+          {/* User Menu */}
+          <div className="flex items-center gap-3">
+            {user && (
+              <>
+                <Link
+                  to="/settings"
+                  className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                >
+                  <FaCog />
+                </Link>
+                
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <FaUser className="text-blue-600 text-sm" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    {user.email?.split('@')[0]}
+                  </span>
+                </div>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={signOut}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  <FaSignOutAlt />
+                </Button>
+              </>
+            )}
           </div>
         </div>
-      </motion.nav>
-    </>
+
+        {/* Mobile Navigation */}
+        <div className="md:hidden border-t border-gray-200">
+          <div className="flex items-center justify-around py-2">
+            <Link
+              to="/dashboard"
+              className={`flex flex-col items-center gap-1 px-3 py-2 text-xs ${
+                isActive('/dashboard') ? 'text-blue-700' : 'text-gray-600'
+              }`}
+            >
+              <FaHome />
+              Dashboard
+            </Link>
+            
+            <Link
+              to="/pets"
+              className={`flex flex-col items-center gap-1 px-3 py-2 text-xs ${
+                isActive('/pets') ? 'text-blue-700' : 'text-gray-600'
+              }`}
+            >
+              <FaDog />
+              Pets
+            </Link>
+            
+            <Link
+              to="/schedule"
+              className={`flex flex-col items-center gap-1 px-3 py-2 text-xs ${
+                isActive('/schedule') ? 'text-blue-700' : 'text-gray-600'
+              }`}
+            >
+              <FaCalendarAlt />
+              Schedule
+            </Link>
+            
+            <Link
+              to="/notifications"
+              className={`flex flex-col items-center gap-1 px-3 py-2 text-xs ${
+                isActive('/notifications') ? 'text-blue-700' : 'text-gray-600'
+              }`}
+            >
+              <FaBell />
+              Notifications
+            </Link>
+          </div>
+        </div>
+      </div>
+    </nav>
   );
 };
 

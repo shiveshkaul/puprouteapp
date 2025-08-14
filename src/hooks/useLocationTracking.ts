@@ -534,3 +534,111 @@ export const useAddWalkPhoto = () => {
     },
   });
 };
+
+// Compatible interface for LiveWalkExperience component
+interface Location {
+  lat: number;
+  lng: number;
+  timestamp?: number;
+}
+
+interface WalkingMetrics {
+  distance: number;
+  duration: number;
+  calories: number;
+  photos: number;
+  photoUrls?: string[];
+}
+
+interface LocationTrackingResult {
+  currentLocation: Location | null;
+  routePath: Location[];
+  walkingMetrics: WalkingMetrics | null;
+  isTracking: boolean;
+  startTracking: () => void;
+  pauseTracking: () => void;
+  stopTracking: () => void;
+}
+
+export const useLocationTracking = (bookingId: string): LocationTrackingResult => {
+  const { location, startTracking: startGeoTracking, stopTracking: stopGeoTracking, isTracking } = useGeolocation();
+  const { data: route } = useWalkRouteTracking(bookingId);
+  const { data: photos } = useWalkPhotos(bookingId);
+  const addLocationPoint = useAddLocationPoint();
+  const startWalkMutation = useStartWalkTracking();
+  const endWalkMutation = useEndWalkTracking();
+
+  const currentLocation: Location | null = location ? {
+    lat: location.coords.latitude,
+    lng: location.coords.longitude,
+    timestamp: location.timestamp
+  } : null;
+
+  const routePath: Location[] = route?.route_points?.map(point => ({
+    lat: point.latitude,
+    lng: point.longitude,
+    timestamp: new Date(point.timestamp).getTime()
+  })) || [];
+
+  const walkingMetrics: WalkingMetrics | null = route ? {
+    distance: route.total_distance,
+    duration: route.total_duration,
+    calories: Math.round(route.total_distance * 100), // Rough calculation
+    photos: photos?.length || 0,
+    photoUrls: photos?.map(p => p.photo_url) || []
+  } : null;
+
+  const startTracking = useCallback(() => {
+    if (currentLocation && !route) {
+      // Start new walk
+      startWalkMutation.mutate({
+        bookingId,
+        startLocation: {
+          latitude: currentLocation.lat,
+          longitude: currentLocation.lng
+        }
+      });
+    }
+    startGeoTracking();
+  }, [currentLocation, route, bookingId, startWalkMutation, startGeoTracking]);
+
+  const pauseTracking = useCallback(() => {
+    stopGeoTracking();
+  }, [stopGeoTracking]);
+
+  const stopTracking = useCallback(() => {
+    if (currentLocation && route) {
+      endWalkMutation.mutate({
+        bookingId,
+        endLocation: {
+          latitude: currentLocation.lat,
+          longitude: currentLocation.lng
+        },
+        totalDistance: route.total_distance,
+        totalDuration: route.total_duration
+      });
+    }
+    stopGeoTracking();
+  }, [currentLocation, route, bookingId, endWalkMutation, stopGeoTracking]);
+
+  // Add location points during tracking
+  useEffect(() => {
+    if (isTracking && currentLocation && route) {
+      addLocationPoint.mutate({
+        bookingId,
+        latitude: currentLocation.lat,
+        longitude: currentLocation.lng
+      });
+    }
+  }, [currentLocation, isTracking, route, bookingId, addLocationPoint]);
+
+  return {
+    currentLocation,
+    routePath,
+    walkingMetrics,
+    isTracking,
+    startTracking,
+    pauseTracking,
+    stopTracking
+  };
+};

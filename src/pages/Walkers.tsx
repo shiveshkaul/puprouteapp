@@ -46,7 +46,7 @@ const Walkers = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-info/10 pt-20 pb-24 md:pl-64">
+    <div className="min-h-screen bg-gradient-to-br from-background to-info/10">
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <motion.div

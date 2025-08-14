@@ -430,3 +430,64 @@ export const useGenerateAIWalkReport = () => {
 };
 
 export { GeminiAIService };
+
+// Compatible interface for LiveWalkExperience component
+interface Location {
+  lat: number;
+  lng: number;
+  timestamp?: number;
+}
+
+interface AIInsights {
+  energyLevel: string;
+  routeOptimality: string;
+  experienceScore: number;
+  weatherConditions?: string;
+  safetyScore?: number;
+  recommendation?: string;
+}
+
+interface EmergencyAlert {
+  id: string;
+  type: 'weather' | 'safety' | 'health' | 'traffic';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  message: string;
+  timestamp: number;
+}
+
+interface AILocationIntelligenceProps {
+  petId: string;
+  walkerId: string;
+  currentLocation: Location | null;
+  walkStatus: 'waiting' | 'started' | 'paused' | 'completed';
+}
+
+interface AILocationIntelligenceResult {
+  data: AIInsights | null;
+  realTimeAnalysis: AIInsights | null;
+  emergencyAlerts: EmergencyAlert[];
+  isAnalyzing: boolean;
+}
+
+export const useAILocationIntelligence = (props: AILocationIntelligenceProps): AILocationIntelligenceResult => {
+  const aiService = new GeminiAIService();
+
+  // Mock AI insights for the component
+  const mockInsights: AIInsights = {
+    energyLevel: props.walkStatus === 'started' ? 'High' : 'Medium',
+    routeOptimality: 'Excellent - Pet-friendly route detected',
+    experienceScore: Math.floor(Math.random() * 3) + 8, // 8-10
+    weatherConditions: 'Perfect for walking',
+    safetyScore: 9,
+    recommendation: 'Great route! Continue enjoying the walk.'
+  };
+
+  const mockEmergencyAlerts: EmergencyAlert[] = [];
+
+  return {
+    data: mockInsights,
+    realTimeAnalysis: mockInsights,
+    emergencyAlerts: mockEmergencyAlerts,
+    isAnalyzing: false
+  };
+};

@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AnimatePresence } from "framer-motion";
-import Navigation from "@/components/Layout/Navigation";
+import SidebarLayout from "@/components/Layout/SidebarLayout";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 
 // Pages
@@ -42,10 +42,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   return (
-    <>
-      <Navigation />
+    <SidebarLayout>
       {children}
-    </>
+    </SidebarLayout>
   );
 };
 

@@ -45,32 +45,18 @@ export const useAddPet = () => {
     mutationFn: async (pet: Omit<PetInsert, 'owner_id'>) => {
       if (!user) throw new Error('User not authenticated')
       
-      console.log('Adding pet with direct auth UUID:', user.id)
-      
-      // Direct insertion using auth.uid() - no user profile needed
       const { data, error } = await supabase
         .from('pets')
-        .insert({ 
-          ...pet, 
-          owner_id: user.id // Use auth UUID directly
-        })
+        .insert({ ...pet, owner_id: user.id })
         .select()
         .single()
       
-      if (error) {
-        console.error('Pet creation error:', error)
-        throw new Error(`Failed to add pet: ${error.message}`)
-      }
-      
-      console.log('Pet created successfully:', data)
+      if (error) throw error
       return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pets'] })
     },
-    onError: (error) => {
-      console.error('Add pet mutation failed:', error)
-    }
   })
 }
 
