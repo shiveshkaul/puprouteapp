@@ -49,6 +49,7 @@ interface LiveWalkTrackingProps {
   pets: Pet[];
   walker?: Walker;
   duration: number;
+  startLocation?: { lat: number; lng: number };
   onEndWalk: () => void;
 }
 
@@ -56,6 +57,7 @@ const LiveWalkTracking: React.FC<LiveWalkTrackingProps> = ({
   pets,
   walker,
   duration,
+  startLocation: propStartLocation,
   onEndWalk
 }) => {
   const {
@@ -100,10 +102,10 @@ const LiveWalkTracking: React.FC<LiveWalkTrackingProps> = ({
   const [accuracyCircle, setAccuracyCircle] = useState<google.maps.Circle | null>(null);
   const [photoMarkers, setPhotoMarkers] = useState<google.maps.Marker[]>([]);
 
-  // Center for map view
+  // Center for map view - prioritize current location, then prop start location, then hook start location
   const center = useMemo(() => 
-    currentLocation ?? startLocation ?? { lat: 37.773972, lng: -122.431297 }, 
-    [currentLocation, startLocation]
+    currentLocation ?? propStartLocation ?? startLocation ?? { lat: 48.6639, lng: 10.1524 }, 
+    [currentLocation, propStartLocation, startLocation]
   );
 
   // Load Google Maps
@@ -143,14 +145,40 @@ const LiveWalkTracking: React.FC<LiveWalkTrackingProps> = ({
       setMapLoaded(true);
     };
 
+    const loadGoogleMapsAPI = () => {
+      // Use the configured Google Maps API key
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyAlY5Q1LZkbXGsz-BO0amHcceQpa_HeaCo';
+      
+      if (!apiKey || apiKey === 'your_google_maps_api_key_here') {
+        // Load mock Google Maps for demo
+        import('@/lib/mockGoogleMaps').then(() => {
+          console.log('🗺️ Using Demo Maps (Real Google Maps API key not configured)');
+          initializeMap();
+        });
+      } else {
+        // Load real Google Maps API
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry`;
+        script.async = true;
+        script.onload = () => {
+          console.log('🗺️ Google Maps API loaded successfully');
+          initializeMap();
+        };
+        script.onerror = () => {
+          console.log('🗺️ Google Maps API failed, falling back to demo maps');
+          // Fallback to mock maps if real API fails
+          import('@/lib/mockGoogleMaps').then(() => {
+            initializeMap();
+          });
+        };
+        document.head.appendChild(script);
+      }
+    };
+
     if (window.google && window.google.maps) {
       initializeMap();
     } else {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyAlY5Q1LZkbXGsz-BO0amHcceQpa_HeaCo&libraries=places,geometry`;
-      script.async = true;
-      script.onload = initializeMap;
-      document.head.appendChild(script);
+      loadGoogleMapsAPI();
     }
   }, [center]);
 
@@ -481,7 +509,8 @@ const LiveWalkTracking: React.FC<LiveWalkTrackingProps> = ({
               <div className="absolute inset-0 flex items-center justify-center bg-white">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading Google Maps...</p>
+                  <p className="text-gray-600 mb-2">Loading Google Maps...</p>
+                  <p className="text-sm text-gray-500">Initializing GPS tracking & navigation</p>
                 </div>
               </div>
             )}

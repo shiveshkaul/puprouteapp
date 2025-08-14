@@ -22,6 +22,9 @@ import Photos from "@/pages/Photos";
 import Loyalty from "@/pages/Loyalty";
 import Notifications from "@/pages/Notifications";
 import NotFound from "@/pages/NotFound";
+import { RealAdvancedWalkExperience } from "@/components/RealAdvancedWalkExperience";
+import { LiveWalkExperience } from "@/components/LiveWalkExperience";
+import PremiumWalkExperience from "@/pages/PremiumWalkExperience";
 
 const queryClient = new QueryClient();
 
@@ -159,6 +162,14 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <Notifications />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/premium-walk"
+                  element={
+                    <ProtectedRoute>
+                      <PremiumWalkExperience />
                     </ProtectedRoute>
                   }
                 />

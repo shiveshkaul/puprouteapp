@@ -54,8 +54,8 @@ const PremiumWalkExperience = () => {
         },
         (error) => {
           console.error('Location error:', error);
-          // Default to San Francisco if location fails
-          setCurrentLocation({ lat: 37.7749, lng: -122.4194 });
+          // Don't set a fallback location - let the user enable location services
+          console.log('Please enable location services for GPS tracking');
         },
         {
           enableHighAccuracy: true,
@@ -77,6 +77,10 @@ const PremiumWalkExperience = () => {
   const startWalk = () => {
     if (selectedPets.length === 0) {
       alert('Please select at least one pet for the walk');
+      return;
+    }
+    if (!currentLocation) {
+      alert('Please enable location services to start GPS tracking');
       return;
     }
     setWalkStarted(true);
@@ -152,19 +156,38 @@ const PremiumWalkExperience = () => {
         </div>
 
         {/* Current Location Display */}
-        {currentLocation && (
+        {currentLocation ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
             className="mb-8"
           >
-            <Card className="p-4 bg-blue-50 border-blue-200">
-              <div className="flex items-center gap-2 text-blue-700">
+            <Card className="p-4 bg-green-50 border-green-200">
+              <div className="flex items-center gap-2 text-green-700">
                 <FaMapMarkerAlt />
-                <span className="font-semibold">Your Current Location:</span>
+                <span className="font-semibold">GPS Location Ready:</span>
                 <span>{currentLocation.lat.toFixed(4)}, {currentLocation.lng.toFixed(4)}</span>
+                <span className="text-sm text-green-600">• Live tracking enabled</span>
               </div>
+            </Card>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mb-8"
+          >
+            <Card className="p-4 bg-yellow-50 border-yellow-200">
+              <div className="flex items-center gap-2 text-yellow-700">
+                <FaMapMarkerAlt />
+                <span className="font-semibold">Getting GPS location...</span>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+              </div>
+              <p className="text-sm text-yellow-600 mt-2">
+                Please allow location access for GPS tracking to work properly
+              </p>
             </Card>
           </motion.div>
         )}

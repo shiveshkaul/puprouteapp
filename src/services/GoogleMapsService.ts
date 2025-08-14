@@ -1,6 +1,6 @@
 // Comprehensive Google Maps API Service - ALL APIs Integrated
-class GoogleMapsService {
-  private apiKey = 'AIzaSyAlY5Q1LZkbXGsz-BO0amHcceQpa_HeaCo';
+export class GoogleMapsService {
+  private apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyAlY5Q1LZkbXGsz-BO0amHcceQpa_HeaCo';
 
   // 1. GEOLOCATION API - Get real device location
   async getCurrentLocation(): Promise<{ lat: number; lng: number }> {

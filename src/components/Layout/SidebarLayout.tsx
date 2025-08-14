@@ -16,7 +16,8 @@ import {
   FaHeart,
   FaBars,
   FaTimes,
-  FaUsers
+  FaUsers,
+  FaStar
 } from 'react-icons/fa';
 
 interface SidebarLayoutProps {
@@ -42,6 +43,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       path: '/schedule',
       icon: FaCalendarAlt,
       description: 'Walk bookings'
+    },
+    {
+      name: 'Premium Walk',
+      path: '/premium-walk',
+      icon: FaStar,
+      description: 'Advanced features'
     },
     {
       name: 'Pets',

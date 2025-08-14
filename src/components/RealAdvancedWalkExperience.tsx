@@ -36,11 +36,12 @@ export const RealAdvancedWalkExperience: React.FC<RealAdvancedWalkExperienceProp
   onEndWalk
 }) => {
   return (
-          <LiveWalkTracking
-        pets={pets}
-        walker={walker}
-        duration={duration}
-        onEndWalk={onEndWalk}
-      />
+    <LiveWalkTracking
+      pets={pets}
+      walker={walker}
+      duration={duration}
+      startLocation={startLocation}
+      onEndWalk={onEndWalk}
+    />
   );
 };

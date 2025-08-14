@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 
+// Advanced Maps Service with AI Integration  
 // All Google Maps APIs Integration
-const GOOGLE_MAPS_API_KEY = 'AIzaSyAlY5Q1LZkbXGsz-BO0amHcceQpa_HeaCo';
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyAlY5Q1LZkbXGsz-BO0amHcceQpa_HeaCo';
 const GEMINI_API_KEY = 'AIzaSyBafk7WqRslUyt3UFz0BFg6hqTyUy_nxow';
 
 interface LocationData {
