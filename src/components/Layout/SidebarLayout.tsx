@@ -108,7 +108,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen max-h-screen bg-gray-50 overflow-hidden">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
@@ -122,7 +122,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         fixed lg:static inset-y-0 left-0 z-50 w-72 bg-white shadow-xl 
         transform transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:block flex flex-col h-screen
+        lg:translate-x-0 lg:block flex flex-col h-full max-h-full
       `}>
         {/* Logo & Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
@@ -146,7 +146,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         </div>
 
         {/* Navigation Items - Scrollable */}
-        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+        <nav className="flex-1 min-h-0 overflow-y-auto px-4 py-6 space-y-4" style={{ maxHeight: 'calc(100vh - 200px)' }}>
           <div className="space-y-2">
             {navigationItems.map((item) => {
               const Icon = item.icon;
@@ -302,7 +302,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         </div>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-gray-50">
+        <main className="flex-1 min-h-0 overflow-y-auto bg-gray-50">
           <div className="h-full">
             {children}
           </div>
