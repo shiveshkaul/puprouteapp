@@ -50,7 +50,8 @@ interface LiveWalkTrackingProps {
   walker?: Walker;
   duration: number;
   startLocation?: { lat: number; lng: number };
-  onEndWalk: () => void;
+  selectedRoute?: any;
+  onEndWalk: (walkData?: any) => void;
 }
 
 const LiveWalkTracking: React.FC<LiveWalkTrackingProps> = ({
@@ -58,6 +59,7 @@ const LiveWalkTracking: React.FC<LiveWalkTrackingProps> = ({
   walker,
   duration,
   startLocation: propStartLocation,
+  selectedRoute,
   onEndWalk
 }) => {
   const {
@@ -78,6 +80,7 @@ const LiveWalkTracking: React.FC<LiveWalkTrackingProps> = ({
     photos,
     environmentalData,
     error,
+    stats,
     startWalk,
     pauseWalk,
     resumeWalk,
@@ -354,16 +357,59 @@ const LiveWalkTracking: React.FC<LiveWalkTrackingProps> = ({
   };
 
   const formatPace = (pace: number) => {
+    if (!pace || !isFinite(pace) || pace <= 0) return '--:--/km';
     const minutes = Math.floor(pace);
     const seconds = Math.floor((pace - minutes) * 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}/km`;
   };
 
+  const formatCurrentPace = (speedKmh: number) => {
+    if (!speedKmh || speedKmh <= 0 || !isFinite(speedKmh)) return '--:--/km';
+    const paceMinPerKm = 60 / speedKmh; // Convert km/h to min/km
+    if (!isFinite(paceMinPerKm)) return '--:--/km';
+    const minutes = Math.floor(paceMinPerKm);
+    const seconds = Math.floor((paceMinPerKm - minutes) * 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}/km`;
+  };
+
   const handleEndWalk = () => {
     endWalk();
+    
+    // Create walk summary data
+    const walkSummaryData = {
+      walkId: `walk_${Date.now()}`,
+      pets: pets.map(p => p.id),
+      stats: {
+        durationMs: walkDuration,
+        distanceMeters: distance,
+        avgPaceMinPerKm: pace,
+        calories: calories,
+        steps: steps,
+        elevationGainM: elevationGain,
+        maxSpeedKmh: stats.maxSpeedMps * 3.6
+      },
+      events: photos.map((photo, index) => ({
+        id: `event_${index}`,
+        type: 'photo',
+        timestamp: photo.timestamp,
+        location: { lat: photo.latitude, lng: photo.longitude },
+        notes: photo.caption
+      })),
+      path: routePoints.map(point => ({
+        lat: point.lat,
+        lng: point.lng,
+        timestamp: point.ts
+      })),
+      startTime: startLocation ? Date.now() - walkDuration : Date.now(),
+      endTime: Date.now(),
+      route: selectedRoute || undefined
+    };
+
+    console.log('Walk completed with data:', walkSummaryData);
+    
     setTimeout(() => {
-      onEndWalk();
-    }, 3000);
+      onEndWalk(walkSummaryData);
+    }, 2000);
   };
 
   const handleTakePhoto = async () => {
@@ -449,7 +495,7 @@ const LiveWalkTracking: React.FC<LiveWalkTrackingProps> = ({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3"
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3"
         >
           <Card className="p-3">
             <div className="flex items-center gap-2 mb-1">
@@ -469,16 +515,8 @@ const LiveWalkTracking: React.FC<LiveWalkTrackingProps> = ({
           
           <Card className="p-3">
             <div className="flex items-center gap-2 mb-1">
-              <FaTachometerAlt className="text-purple-500 text-sm" />
-              <span className="text-xs font-medium">Speed</span>
-            </div>
-            <div className="text-xl font-bold">{currentSpeed.toFixed(1)}<span className="text-sm"> km/h</span></div>
-          </Card>
-          
-          <Card className="p-3">
-            <div className="flex items-center gap-2 mb-1">
               <FaRunning className="text-orange-500 text-sm" />
-              <span className="text-xs font-medium">Pace</span>
+              <span className="text-xs font-medium">Avg Pace</span>
             </div>
             <div className="text-lg font-bold">{formatPace(pace)}</div>
           </Card>
@@ -497,6 +535,45 @@ const LiveWalkTracking: React.FC<LiveWalkTrackingProps> = ({
               <span className="text-xs font-medium">Steps</span>
             </div>
             <div className="text-xl font-bold">{steps.toLocaleString()}</div>
+          </Card>
+
+          <Card className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <FaRunning className="text-purple-500 text-sm" />
+              <span className="text-xs font-medium">Current Pace</span>
+            </div>
+            <div className="text-lg font-bold">{formatCurrentPace(currentSpeed)}</div>
+          </Card>
+        </motion.div>
+
+        {/* Additional Statistics Row */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-3"
+        >
+          <Card className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <FaTachometerAlt className="text-blue-500 text-sm" />
+              <span className="text-xs font-medium">Max Speed</span>
+            </div>
+            <div className="text-xl font-bold">{stats.maxSpeedMps ? (stats.maxSpeedMps * 3.6).toFixed(1) : '0.0'} km/h</div>
+          </Card>
+          
+          <Card className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <FaMountain className="text-gray-500 text-sm" />
+              <span className="text-xs font-medium">Elevation</span>
+            </div>
+            <div className="text-xl font-bold">{elevationGain}m</div>
+          </Card>
+
+          <Card className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <FaTachometerAlt className="text-green-500 text-sm" />
+              <span className="text-xs font-medium">Avg Speed</span>
+            </div>
+            <div className="text-xl font-bold">{averageSpeed.toFixed(1)} km/h</div>
           </Card>
         </motion.div>
 
