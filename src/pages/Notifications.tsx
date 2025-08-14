@@ -41,7 +41,7 @@ const Notifications = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/10 pt-20 pb-24 md:pl-64">
+      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/10 pt-20 pb-24">
         <div className="container mx-auto px-6 py-12 text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Please log in to view notifications</h2>
           <Button asChild>
@@ -98,7 +98,7 @@ const Notifications = () => {
     : allNotifications;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/10 pt-20 pb-24 md:pl-64">
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/10 pt-20 pb-24">
       <div className="container mx-auto px-6 py-8">
         {/* Header */}
         <motion.div

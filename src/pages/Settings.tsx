@@ -62,7 +62,7 @@ const Settings = () => {
   
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-accent/10 pt-20 pb-24 md:pl-64">
+      <div className="min-h-screen bg-gradient-to-br from-background to-accent/10 pt-20 pb-24">
         <div className="container mx-auto px-4 py-6 flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-primary"></div>
         </div>
@@ -72,7 +72,7 @@ const Settings = () => {
   
   if (!user || !settings || !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-accent/10 pt-20 pb-24 md:pl-64">
+      <div className="min-h-screen bg-gradient-to-br from-background to-accent/10 pt-20 pb-24">
         <div className="container mx-auto px-4 py-6">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Settings Unavailable</h1>
@@ -175,8 +175,8 @@ const Settings = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-accent/10 pt-20 pb-24 md:pl-64">
-      <div className="container mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-background to-accent/10 pt-20 pb-24 md:pl-1">
+      <div className="container mx-auto px-4 md:px-6 py-6 max-w-4xl">
         {/* Header */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}
